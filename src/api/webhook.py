@@ -16,7 +16,7 @@ router = APIRouter()
 MAX_BYTES = 1024 * 1024  # 1 MiB
 
 
-@router.post("/webhook/{source}")
+@router.post("/webhook/{source}", status_code=201)
 async def receive_webhook(
     request: Request,
     source: str = Path(..., description="Source identifier matching configuration"),
@@ -69,4 +69,3 @@ async def receive_webhook(
 
     status_str = "sent" if overall_success or not destinations else "failed"
     return {"event_id": event_id, "notification_status": status_str}
-
