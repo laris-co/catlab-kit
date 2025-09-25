@@ -1,17 +1,18 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0
-- Modified principles: Added VI. Commit and Push Traceability
+- Version change: 1.1.0 → 1.2.0
+- Modified principles: Added VII. No Force Commands; tightened VI push policy
 - Added sections: None (expanded Workflow & Gates content)
 - Removed sections: None
 - Templates requiring updates:
-  ✔ .specify/templates/plan-template.md (updated: version reference, commit/push gate)
-  ✔ .specify/templates/tasks-template.md (updated: push requirement + checklist)
+  ✔ .specify/templates/plan-template.md (updated: version reference + no-force gate)
+  ✔ .specify/templates/tasks-template.md (updated: push requirement + no-force checklist)
   ⚠ .specify/templates/spec-template.md (no change needed)
   ⚠ .specify/templates/commands/* (not present in repo)
 - Follow-up TODOs:
   - Configure branch protections for `main` (require status checks, disallow force pushes).
   - Ensure CI uploads `test-reports/` and `coverage/` artifacts on every run.
+  - Enforce "no force" in CI (pre-push hook + pipeline grep/block rules).
 -->
 
 # catlab-kit Constitution
@@ -68,9 +69,19 @@ Rationale: Automated gates maintain standards without manual policing.
 - After each meaningful change (tests, code, docs, or config), commit and push
   to the feature branch immediately. Do not accumulate local-only work.
 - Use feature branches and open PRs to merge into protected branches (e.g.,
-  `main`). Do not force-push protected branches.
+  `main`). Do not use `git push --force` or `--force-with-lease` on any branch.
 Rationale: Frequent commit/push cycles create transparent progress, reduce
 integration risk, and improve recovery.
+
+### VII. No Force Commands (NON-NEGOTIABLE)
+- Team members MUST NOT use force flags or destructive options in version
+  control or system commands (e.g., `git push --force`, `--force-with-lease`,
+  `git reset --hard`, `rm -rf`, package managers' `--force` installs).
+- If a change requires history alteration or destructive action, use safe
+  alternatives: revert commits, create follow-up commits, or perform additive
+  migrations. Propose exceptions only via a Constitution amendment PR.
+Rationale: Forced operations hide underlying issues and risk data loss or
+pipeline instability. Absolute prohibition ensures safety and traceability.
 
 ## Quality Standards & Constraints
 
@@ -102,6 +113,8 @@ integration risk, and improve recovery.
   - Reviewer confirms "Simplicity First" was observed.
   - Commit history shows small, logical steps; all commits are pushed to
     remote.
+  - No forced operations used or proposed (git `--force`/`--force-with-lease`,
+    `git reset --hard`, `rm -rf`, similar flags).
 
 ## Governance
 <!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
@@ -120,5 +133,5 @@ Compliance Review Expectations:
   (`.specify/memory/constitution.md`).
 - CI enforces gates for style, typing, tests, and report artifacts.
 
-**Version**: 1.1.0 | **Ratified**: 2025-09-25 | **Last Amended**: 2025-09-25
-<!-- Ratified on initial adoption; amended to add commit/push traceability. -->
+**Version**: 1.2.0 | **Ratified**: 2025-09-25 | **Last Amended**: 2025-09-25
+<!-- Amended to prohibit force commands and tighten push policy. -->

@@ -22,6 +22,7 @@
    → Different files = mark [P] for parallel
    → Same file = sequential (no [P])
    → Tests before implementation (TDD)
+   → No force operations (no `--force`, `--force-with-lease`, `rm -rf`)
 5. Number tasks sequentially (T001, T002...)
 6. Generate dependency graph
 7. Create parallel execution examples
@@ -99,6 +100,7 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 - [P] tasks = different files, no dependencies
 - Verify tests fail before implementing
 - Commit after each task and push to remote
+- Never use force flags; choose safe alternatives (revert, additive changes)
 - Avoid: vague tasks, same file conflicts
 
 ## Task Generation Rules
@@ -129,5 +131,6 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 - [ ] Parallel tasks truly independent
 - [ ] Each task specifies exact file path
 - [ ] No task modifies same file as another [P] task
- - [ ] Test reports produced (JUnit XML + coverage XML/HTML)
- - [ ] Each task has at least one commit pushed to remote
+- [ ] Test reports produced (JUnit XML + coverage XML/HTML)
+- [ ] Each task has at least one commit pushed to remote
+- [ ] No force flags used (git `--force`/`--force-with-lease`, `rm -rf`, similar)

@@ -207,7 +207,8 @@ ios/ or android/
 - [ ] Post-Design Constitution Check: PASS
 - [ ] All NEEDS CLARIFICATION resolved
 - [ ] Complexity deviations documented
+ - [ ] No-force policy observed (no `--force`/`--force-with-lease`, `rm -rf`)
  - [ ] Plan changes committed and pushed to remote
 
 ---
-*Based on Constitution v1.1.0 - See `.specify/memory/constitution.md`*
+*Based on Constitution v1.2.0 - See `.specify/memory/constitution.md`*
