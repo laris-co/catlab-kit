@@ -207,7 +207,7 @@
   - done-when: unit tests pass
   - git: `git add -A && git commit -m "T024: add unit tests" && git push`
 
-- [ ] T025 [P] Linting and typing clean
+- [X] T025 [P] Linting and typing clean
   - Run: `ruff check --output-format=github . && mypy --strict`
   - done-when: zero errors
   - git: `git add -A && git commit -m "T025: lint + typing clean" && git push`

@@ -11,4 +11,3 @@ def create_app() -> FastAPI:
     app.include_router(health_router)
     app.include_router(webhook_router)
     return app
-

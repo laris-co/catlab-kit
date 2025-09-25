@@ -8,4 +8,3 @@ def test_metrics_counters_increment():
     metrics.notifications_failed_total.inc()
     # No assertion on value; ensure no exceptions raised
     assert True
-

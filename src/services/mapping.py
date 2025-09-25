@@ -14,5 +14,6 @@ def _get_dotted(source: Dict[str, Any], path: str) -> Any:
 
 
 def extract_fields(payload: Dict[str, Any], rules: Dict[str, str]) -> Dict[str, Any]:
-    return {alias: _get_dotted(payload, dotted) for alias, dotted in (rules or {}).items()}
-
+    return {
+        alias: _get_dotted(payload, dotted) for alias, dotted in (rules or {}).items()
+    }

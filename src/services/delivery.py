@@ -21,4 +21,3 @@ def deliver(dest: Dict[str, Any], message: str) -> bool:
         return 200 <= r.status_code < 300
     except Exception:
         return False
-

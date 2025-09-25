@@ -14,6 +14,8 @@ def test_destination_timeout_marks_failed(monkeypatch):
 
     app = create_app()
     client = TestClient(app)
-    r = client.post("/webhook/alerts", json={"alert": {"title": "T", "severity": "low"}})
+    r = client.post(
+        "/webhook/alerts", json={"alert": {"title": "T", "severity": "low"}}
+    )
     assert r.status_code in (201, 200)
     assert r.json().get("notification_status") == "failed"

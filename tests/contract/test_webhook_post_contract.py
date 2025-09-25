@@ -12,4 +12,3 @@ def test_openapi_contains_webhook_post():
     assert "post" in post, "POST missing for webhook path"
     resp = post["post"]["responses"].get("201")
     assert resp is not None, "201 response missing"
-

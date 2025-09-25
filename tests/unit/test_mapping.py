@@ -7,4 +7,3 @@ def test_extract_fields_returns_empty_for_missing():
     out = extract_fields(payload, rules)
     assert out["x"] == ""
     assert out["y"] == 1
-

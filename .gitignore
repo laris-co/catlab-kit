@@ -1,3 +1,11 @@
 # Ignore everything in .codex except prompts directory
 .codex/*
 !.codex/prompts/
+.venv/
+__pycache__/
+*.pyc
+coverage/
+test-reports/
+catlab_kit.egg-info/
+*.py[cod]
+.coverage

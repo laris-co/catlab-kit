@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any, Dict
 
-from fastapi import APIRouter, HTTPException, Path, Request, Response, status
+from fastapi import APIRouter, HTTPException, Path, Request, status
 
 from src.services.config_loader import loader
 from src.services.mapping import extract_fields
@@ -24,7 +24,10 @@ async def receive_webhook(
     body = await request.body()
     metrics.events_received_total.inc()
     if len(body) > MAX_BYTES:
-        raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="Payload too large")
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Payload too large",
+        )
     try:
         payload = json.loads(body.decode("utf-8")) if body else {}
     except Exception as e:
@@ -62,7 +65,12 @@ async def receive_webhook(
             overall_success = False
             metrics.notifications_failed_total.inc()
         try:
-            pb_client.log_delivery(event_id, dest.get("id", "unknown"), ok, None if ok else "delivery failed")
+            pb_client.log_delivery(
+                event_id,
+                dest.get("id", "unknown"),
+                ok,
+                None if ok else "delivery failed",
+            )
         except Exception:
             # Logging failures are non-fatal in this feature
             pass

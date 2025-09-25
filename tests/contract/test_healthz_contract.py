@@ -19,4 +19,3 @@ def test_healthz_endpoint_responds():
     r = client.get("/healthz")
     assert r.status_code == 200
     assert r.json().get("status") == "ok"
-

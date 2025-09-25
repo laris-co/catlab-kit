@@ -1,10 +1,8 @@
 from fastapi.testclient import TestClient
-from pathlib import Path
 
 
-def test_end_to_end_basic(monkeypatch, tmp_path):
+def test_end_to_end_basic(monkeypatch):
     # Monkeypatch PB client and delivery service
-    from src import app as app_module
     from src.services import pb_client as pb
     from src.services import delivery as dlv
 
@@ -19,13 +17,17 @@ def test_end_to_end_basic(monkeypatch, tmp_path):
         }
         return "01HXXXXXFAKEEVENTID"
 
-    def fake_log_delivery(event_id: str, dest_id: str, success: bool, error: str | None = None) -> None:
-        stored.setdefault("logs", []).append({
-            "event_id": event_id,
-            "dest_id": dest_id,
-            "success": success,
-            "error": error,
-        })
+    def fake_log_delivery(
+        event_id: str, dest_id: str, success: bool, error: str | None = None
+    ) -> None:
+        stored.setdefault("logs", []).append(
+            {
+                "event_id": event_id,
+                "dest_id": dest_id,
+                "success": success,
+                "error": error,
+            }
+        )
 
     def fake_deliver(dest: dict, message: str) -> bool:
         stored["delivered"] = {"dest": dest["id"], "message": message}
@@ -47,4 +49,3 @@ def test_end_to_end_basic(monkeypatch, tmp_path):
     data = r.json()
     assert data["notification_status"] in ("sent", "failed")
     assert "event_id" in data
-

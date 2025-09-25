@@ -14,4 +14,3 @@ def configure() -> None:
             structlog.processors.JSONRenderer(),
         ],
     )
-
