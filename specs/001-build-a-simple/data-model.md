@@ -1,75 +1,59 @@
 # Data Model — Webhook Proxy Service Foundation
 
-## PocketBase Collections (defined via Go migrations)
+Spec: /home/floodboy/catlab-kit/specs/001-build-a-simple/spec.md  
+Branch: 001-build-a-simple | Date: 2025-09-25
 
-### webhook_events
-- `id` (PocketBase record id, UUID string) — primary key.
-- `source_identifier` (string, indexed) — matches configured source key.
-- `received_at` (datetime, indexed) — inbound timestamp.
-- `raw_payload` (JSON) — full payload stored verbatim.
-- `payload_fields` (JSON) — extracted fields per configuration mapping.
-- `delivery_status` (enum: `pending`, `forwarded`, `retrying`, `failed`).
-- `last_delivery_attempt_at` (datetime, nullable).
-- `delivery_attempts` (int, default 0).
-- `error_message` (string, nullable, 512 chars) — last failure reason.
-- `destination_ids` (array<string>) — references attempted destinations.
+## Entities
 
-**Indexes**
-- Composite `(source_identifier, received_at)` for recent lookups.
-- Index on `delivery_status` for retry worker queries.
+### WebhookEvent (persisted)
+- id: ULID (string) — primary key
+- source: string — required, indexed
+- received_at: datetime (UTC) — required, default now
+- raw_payload: JSON (stored as TEXT) — required
+- extracted_fields: JSON (TEXT) — required (may be `{}`)
+- delivery_status: enum('sent','failed') — required
+- size_bytes: integer — required, must be ≤ 1_048_576
 
-### destinations
-- `id` — primary key.
-- `name` (string, unique).
-- `destination_type` (enum: `discord_webhook`, `generic_json`).
-- `endpoint_url` (text, encrypted via PocketBase secret storage).
-- `enabled` (bool).
-- `formatter_template` (JSON) — message structure.
-- `metadata` (JSON) — optional headers or overrides.
+Constraints
+- Index: (source, received_at desc)
+- Check: size_bytes ≤ 1 MiB
+- Note: No deduplication; each delivery creates a new record
 
-**Indexes**
-- Unique `name`.
-- Index `destination_type` for filtering.
+### DeliveryLog (persisted)
+- id: ULID (string) — primary key
+- event_id: ULID (string) — required, FK → WebhookEvent.id (cascade delete)
+- destination_id: string — required (from config key)
+- destination_url_snapshot: string — required (audit)
+- attempted_at: datetime (UTC) — required, default now
+- success: boolean — required
+- error_message: string (TEXT) — optional
+- attempt: integer — required, default 1 (no auto-retries in this feature)
 
-### source_configs
-- `id` — primary key.
-- `source_identifier` (string, unique) — used in webhook path.
-- `description` (string).
-- `field_mappings` (JSON array) — `{path, alias, required}` definitions.
-- `destination_order` (array<string>) — ordered destination IDs.
-- `replay_enabled` (bool).
-- `throttle_per_minute` (int, nullable).
+Indexes
+- Index: (event_id, attempted_at desc)
 
-### delivery_logs
-- `id` — primary key.
-- `event_id` (relation -> webhook_events.id).
-- `destination_id` (relation -> destinations.id).
-- `attempt_number` (int).
-- `attempted_at` (datetime).
-- `status` (enum: `success`, `failed`, `skipped`).
-- `response_status_code` (int, nullable).
-- `response_body` (JSON, nullable, truncate to 2 KB).
-- `error_message` (string, nullable).
+### DestinationMapping (configuration, not persisted)
+- source: string — unique key
+- destinations: array<DestinationRef> — one or more
+- fields: map<string alias, string dotted_path> — field extraction rules
+- template: string — notification template using `{alias}` placeholders
 
-**Indexes**
-- Composite `(event_id, destination_id, attempt_number)`.
+Types
+- DestinationRef
+  - id: string — unique key used in logs
+  - type: enum('discord_webhook','generic_webhook')
+  - url: string (secret managed via env or mounted file)
 
-## Relationships & Constraints
-- `destination_order` must reference enabled destinations; enforced in service validation.
-- Soft-delete destinations by toggling `enabled`; migrations enforce rule via PocketBase list rules.
-- Replay resets `delivery_status` to `pending` and increments `delivery_attempts`.
+## Relationships
+- WebhookEvent 1 — N DeliveryLog (by event_id)
+- DestinationMapping is resolved at runtime from configuration (not stored in DB)
 
-## Migration Responsibilities (Go)
-- `001_init_collections.go`: create collections, indexes, and base rules.
-- `002_seed_destinations.go` (optional): insert sample destination records for quickstart.
-- Migrations run automatically on PocketBase startup (`pb.App.Migrations().Register(...)`).
-- Provide CLI command `go run go/pocketbase/main.go migrate up/down` for manual control; document in runbook.
+## State Transitions
+- On store success → attempt notification(s)
+  - If all succeed: WebhookEvent.delivery_status = 'sent'
+  - If any fail: WebhookEvent.delivery_status = 'failed' (details in DeliveryLog)
 
-## Configuration Artifacts
-- `config/sources.yaml` bootstraps source mappings; sync job ensures consistency with PocketBase records.
-- Environment variables: `POCKETBASE_URL`, `POCKETBASE_ADMIN_TOKEN`, destination webhook URLs, `APP_SECRET_KEY` for correlation IDs.
+## Validation Rules
+- Reject inbound request if raw payload > 1 MiB (HTTP 413)
+- Missing mapped fields resolve to empty values in `extracted_fields`
 
-## Outstanding Decisions
-- Confirm retention window (30-day default currently assumed).
-- Define max retry attempts/backoff strategy parameters.
-- Determine whether replay endpoint is exposed via API or CLI-only (default CLI).

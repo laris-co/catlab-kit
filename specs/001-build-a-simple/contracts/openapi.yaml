@@ -1,0 +1,54 @@
+openapi: 3.1.0
+info:
+  title: Webhook Proxy Service
+  version: 0.1.0
+  description: |
+    Minimal webhook proxy that stores events and forwards notifications.
+servers:
+  - url: http://localhost:8000
+paths:
+  /healthz:
+    get:
+      summary: Liveness probe
+      responses:
+        '200':
+          description: Service is healthy
+  /webhook/{source}:
+    post:
+      summary: Receive a webhook event for a given source identifier
+      parameters:
+        - in: path
+          name: source
+          required: true
+          schema:
+            type: string
+          description: Source identifier matching a configured mapping
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '201':
+          description: Event stored (notification attempted)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [event_id, notification_status]
+                properties:
+                  event_id:
+                    type: string
+                    description: ULID for the stored event
+                  notification_status:
+                    type: string
+                    enum: [sent, failed]
+                    description: Outcome of in-line notification attempt
+        '400':
+          description: Invalid payload
+        '413':
+          description: Payload too large (> 1 MiB)
+        '503':
+          description: Storage unavailable

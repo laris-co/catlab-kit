@@ -62,30 +62,53 @@ An operations engineer wants to capture webhook notifications from multiple SaaS
 2. **Given** a new destination webhook URL is provided through configuration, **When** the service processes the next incoming event, **Then** the outbound notification uses the updated destination without requiring a restart.
 
 ### Edge Cases
-- What happens when the incoming payload is missing fields referenced by the mapping rules?
-- How does the system handle a downstream destination returning an error or timing out?
-- What occurs if the database is temporarily unavailable when an event arrives?
+- If mapping references missing fields, treat values as empty (null/"N/A"), store the event, and send the notification using defaults.
+- If the destination returns an error or exceeds a 5s timeout, record a failed delivery with details; do not retry; continue processing other events.
+- If the database is unavailable when an event arrives, respond 503 to the sender and do not buffer; rely on upstream retry behavior.
 
 ## Clarifications
 
+### Session 2025-09-26
+- Q: What is the inbound webhook rate limit policy? → A: No rate limiting; rely on upstream systems
+
 ### Session 2025-09-25
 - Q: What data should persist for each webhook event? → A: Store both the full raw payload and the extracted fields with metadata
+- Q: What retention window should we enforce for stored webhook events? → A: Retain indefinitely until manual purge
+- Q: How should we handle potentially sensitive data (PII/PHI) in inbound webhook payloads when storing the “raw payload”? → A: Assume non-sensitive; store full raw payload as-is
+- Q: How should the service handle duplicate webhook deliveries (retries of the same event)? → A: No dedup; every delivery stored as a new event (per user directive: choose simplest)
+- Q: Behavior when mapping references a missing field? → A: Store event; leave missing values empty; send notification with defaults (per user directive)
+- Q: What is the retry policy and timeout for outbound destination calls? → A: No retries; 5s timeout; record failure (per user directive)
+- Q: What is the behavior if the database is unavailable on write? → A: Respond 503; no buffering; rely on upstream retry (per user directive)
+- Q: How are configuration changes applied without restart? → A: Auto-detect config changes within 60 seconds; no restart (per user directive)
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
-- **FR-001**: The service MUST expose a public endpoint that accepts webhook requests using standard HTTP verbs (at minimum POST).
-- **FR-002**: The service MUST allow configuring multiple source identifiers, each with a definition of which payload fields to store and forward.
-- **FR-003**: The service MUST persist the full raw payload alongside selected payload fields, timestamp, and source identifier for every received event.
-- **FR-004**: The service MUST format and deliver a notification to at least one outbound webhook destination (e.g., Discord-style webhook URL) for every successfully stored event.
-- **FR-005**: The service MUST continue processing new events even if a particular destination call fails, and MUST record the failure for later review.
-- **FR-006**: The service MUST provide a minimal configuration interface (file or environment-based) to define sources, field mappings, and destination endpoints.
-- **FR-007**: The platform MUST supply Go-based PocketBase migrations that run automatically on startup and are invocable via CLI for schema changes.
+- **FR-001**: The service MUST operate without an internal inbound rate limit, assuming upstream systems throttle appropriately; documentation must highlight reliance on upstream controls.
+- **FR-002**: The service MUST expose a public endpoint that accepts webhook requests using standard HTTP verbs (at minimum POST).
+- **FR-003**: The service MUST allow configuring multiple source identifiers, each with a definition of which payload fields to store and forward.
+- **FR-004**: The service MUST persist the full raw payload alongside selected payload fields, timestamp, and source identifier for every received event.
+- **FR-005**: The service MUST format and deliver a notification to at least one outbound webhook destination (e.g., Discord-style webhook URL) for every successfully stored event.
+- **FR-006**: The service MUST continue processing new events even if a particular destination call fails, and MUST record the failure for later review.
+- **FR-007**: The service MUST provide a minimal configuration interface (file or environment-based) to define sources, field mappings, and destination endpoints.
+- **FR-008**: The platform MUST supply Go-based PocketBase migrations that run automatically on startup and are invocable via CLI for schema changes.
+- **FR-009**: The platform MUST retain stored webhook events indefinitely until an operator-triggered purge (runbook-driven) is executed.
+- **FR-010**: The service MUST assume inbound payloads are non-sensitive and store the full raw payload unredacted; documentation MUST state that PII/PHI/secrets must not be sent to the service.
+- **FR-011**: The service MUST NOT perform deduplication; each inbound delivery is treated as a new `WebhookEvent` regardless of payload or headers.
+- **FR-012**: Outbound destination calls MUST use a 5s timeout and MUST NOT auto-retry; failures MUST be recorded with error details.
+- **FR-013**: If persistence fails (e.g., database unavailable), the service MUST return HTTP 503 and MUST NOT buffer or queue events; upstream systems are expected to retry.
+- **FR-014**: When mapping rules reference missing fields, the service MUST store the event and proceed, substituting empty or default placeholders in notifications.
+- **FR-015**: Configuration changes MUST take effect without process restart within 60 seconds of update.
+- **FR-016**: The service MUST emit basic observability: structured logs per event and counters for `events_received_total`, `events_stored_total`, `notifications_sent_total`, and `notifications_failed_total`.
+- **FR-017**: The service MUST enforce an inbound payload size limit of 1 MiB and reject larger requests with 413.
+- **FR-018**: The service MUST NOT require inbound authentication; security hardening and auth are out of scope for this feature and deferred to a future iteration.
+- **FR-019**: This feature targets low volume (single instance, best-effort) usage; horizontal scaling, HA, and rate controls are out of scope.
+- **FR-020**: Provide a version-controlled admin command (e.g., `purge-events`) that runs with the same configuration/environment as the service, accompanied by a runbook covering execution, monitoring, and rollback.
 
 ### Key Entities *(include if feature involves data)*
-- **WebhookEvent**: Represents a single inbound webhook occurrence; includes source identifier, received timestamp, stored raw payload body, extracted fields, and delivery status.
+- **WebhookEvent**: Represents a single inbound webhook occurrence; includes unique ID (ULID), source identifier, received timestamp, stored raw payload body, extracted fields, and delivery status. No deduplication is applied; each delivery becomes a distinct record.
 - **DestinationMapping**: Captures configuration linking a source identifier to one or more outbound destinations, field selection rules, and message formatting template.
-- **DeliveryLog**: Tracks each attempt to forward a stored event to a destination, including timestamp, destination identifier, success/failure outcome, and error message if applicable.
+- **DeliveryLog**: Tracks each attempt to forward a stored event to a destination, including timestamp, destination identifier, success/failure outcome, and error message if applicable; no automatic retries are performed.
 
 ---
 
