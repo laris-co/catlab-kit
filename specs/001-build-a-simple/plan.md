@@ -205,7 +205,7 @@ ios/ or android/
 - [ ] All NEEDS CLARIFICATION resolved
 - [ ] Complexity deviations documented
 - [x] No-force policy observed (no `--force`/`--force-with-lease`, `rm -rf`)
-- [ ] Plan changes committed and pushed to remote
+- [x] Plan changes committed and pushed to remote
 - [x] Twelfth-Factor admin processes documented (runbooks/scripts planned)
 
 ---
