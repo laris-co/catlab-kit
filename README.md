@@ -8,3 +8,5 @@ Reference materials:
 
 Local documentation:
 - docs/codex-security.md
+- docs/developer-report.md
+- docs/sandbox-approvals-report.md
