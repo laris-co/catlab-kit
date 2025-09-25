@@ -1,0 +1,3 @@
+# Ignore everything in .codex except prompts directory
+.codex/*
+!.codex/prompts/
