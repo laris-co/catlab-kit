@@ -1,0 +1,99 @@
+openapi: 3.1.0
+info:
+  title: Webhook Proxy Service API
+  version: 0.1.0
+servers:
+  - url: http://localhost:8000
+paths:
+  /webhooks/{sourceId}:
+    post:
+      summary: Receive webhook payload for configured source
+      operationId: ingestWebhook
+      parameters:
+        - name: sourceId
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Identifier that matches a configured source mapping.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '202':
+          description: Accepted for processing
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  correlationId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [accepted]
+        '400':
+          description: Invalid payload according to mapping rules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Unknown source identifier
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /admin/events/{eventId}/replay:
+    post:
+      summary: Replay stored webhook event to configured destinations
+      operationId: replayWebhook
+      description: |
+        Replays the stored event if replay is enabled for the associated source.
+        Requires execution via authenticated operator flow (CLI or secured endpoint).
+      parameters:
+        - name: eventId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Replay scheduled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  correlationId:
+                    type: string
+                  status:
+                    type: string
+                    enum: [scheduled]
+        '403':
+          description: Replay disabled for this source
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Event not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        errorCode:
+          type: string
+        message:
+          type: string
+        correlationId:
+          type: string

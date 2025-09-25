@@ -66,18 +66,23 @@ An operations engineer wants to capture webhook notifications from multiple SaaS
 - How does the system handle a downstream destination returning an error or timing out?
 - What occurs if the database is temporarily unavailable when an event arrives?
 
+## Clarifications
+
+### Session 2025-09-25
+- Q: What data should persist for each webhook event? → A: Store both the full raw payload and the extracted fields with metadata
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 - **FR-001**: The service MUST expose a public endpoint that accepts webhook requests using standard HTTP verbs (at minimum POST).
 - **FR-002**: The service MUST allow configuring multiple source identifiers, each with a definition of which payload fields to store and forward.
-- **FR-003**: The service MUST persist selected payload fields, timestamp, and source identifier for every received event.
+- **FR-003**: The service MUST persist the full raw payload alongside selected payload fields, timestamp, and source identifier for every received event.
 - **FR-004**: The service MUST format and deliver a notification to at least one outbound webhook destination (e.g., Discord-style webhook URL) for every successfully stored event.
 - **FR-005**: The service MUST continue processing new events even if a particular destination call fails, and MUST record the failure for later review.
 - **FR-006**: The service MUST provide a minimal configuration interface (file or environment-based) to define sources, field mappings, and destination endpoints.
 
 ### Key Entities *(include if feature involves data)*
-- **WebhookEvent**: Represents a single inbound webhook occurrence; includes source identifier, received timestamp, raw payload reference, extracted fields, delivery status.
+- **WebhookEvent**: Represents a single inbound webhook occurrence; includes source identifier, received timestamp, stored raw payload body, extracted fields, and delivery status.
 - **DestinationMapping**: Captures configuration linking a source identifier to one or more outbound destinations, field selection rules, and message formatting template.
 - **DeliveryLog**: Tracks each attempt to forward a stored event to a destination, including timestamp, destination identifier, success/failure outcome, and error message if applicable.
 
