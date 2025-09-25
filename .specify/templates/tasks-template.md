@@ -41,13 +41,17 @@
 - **Web app**: `backend/src/`, `frontend/src/`
 - **Mobile**: `api/src/`, `ios/src/` or `android/src/`
 - Paths shown below assume single project - adjust based on plan.md structure
+ - **Test Reports**: `test-reports/` (JUnit XML)
+ - **Coverage Reports**: `coverage/coverage.xml` (XML), `coverage/html/` (HTML)
 
 ## Phase 3.1: Setup
 - [ ] T001 Create project structure per implementation plan
-- [ ] T002 Initialize [language] project with [framework] dependencies
-- [ ] T003 [P] Configure linting and formatting tools
+- [ ] T002 Initialize Python project (Python 3.12+) with required dependencies
+- [ ] T003 [P] Configure linting/formatting (Ruff + Black) and type checking (mypy --strict)
 
 ## Phase 3.2: Tests First (TDD) ⚠️ MUST COMPLETE BEFORE 3.3
+Reporting requirement for all test runs:
+→ Emit JUnit XML to `test-reports/junit.xml` and coverage XML to `coverage/coverage.xml` with HTML at `coverage/html/`.
 **CRITICAL: These tests MUST be written and MUST FAIL before ANY implementation**
 - [ ] T004 [P] Contract test POST /api/users in tests/contract/test_users_post.py
 - [ ] T005 [P] Contract test GET /api/users/{id} in tests/contract/test_users_get.py
@@ -125,3 +129,4 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 - [ ] Parallel tasks truly independent
 - [ ] Each task specifies exact file path
 - [ ] No task modifies same file as another [P] task
+ - [ ] Test reports produced (JUnit XML + coverage XML/HTML)
