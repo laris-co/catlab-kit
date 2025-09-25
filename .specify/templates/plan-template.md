@@ -47,33 +47,7 @@
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-### Simple First, Complex Later ✓
-- [ ] Implementation starts with simplest solution that solves immediate need
-- [ ] Features broken into 1-hour manageable phases
-- [ ] No premature optimization or over-engineering
-- [ ] Complex features compose simple, proven components
-
-### Safety and Reversibility ✓
-- [ ] No force flags used in any commands
-- [ ] All operations are reversible and non-destructive
-- [ ] Safe git operations preserve history
-- [ ] Confirmation required for destructive changes
-
-### Context and Documentation ✓
-- [ ] Proper context management using ccc → nnn → gogogo workflow
-- [ ] AI Diary and Honest Feedback sections planned for retrospectives
-- [ ] Documentation reflects actual implementation plans
-
-### Testing and Quality Assurance ✓
-- [ ] Manual testing checklist defined
-- [ ] Build commands specified with no tolerance for warnings
-- [ ] All affected features identified for testing
-- [ ] Mobile responsiveness considerations included if applicable
-
-### Phased Development ✓
-- [ ] Complex tasks broken into 1-hour chunks
-- [ ] Phase markers used for progress tracking
-- [ ] Each phase completable and testable independently
+[Gates determined based on constitution file]
 
 ## Project Structure
 
@@ -235,4 +209,4 @@ ios/ or android/
 - [ ] Complexity deviations documented
 
 ---
-*Based on Constitution v1.0.0 - See `.specify/memory/constitution.md`*
+*Based on Constitution v2.1.1 - See `/memory/constitution.md`*
