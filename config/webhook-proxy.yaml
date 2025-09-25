@@ -1,0 +1,11 @@
+sources:
+  alerts:
+    destinations:
+      - id: ops-discord
+        type: discord_webhook
+        url: ${DISCORD_WEBHOOK_URL}
+    fields:
+      summary: alert.title
+      severity: alert.severity
+    template: "[{source}] {summary} (sev={severity})"
+

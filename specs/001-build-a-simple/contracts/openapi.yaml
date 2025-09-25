@@ -46,6 +46,15 @@ paths:
                     type: string
                     enum: [sent, failed]
                     description: Outcome of in-line notification attempt
+              examples:
+                sent:
+                  value:
+                    event_id: "01H9Z8XYZABCD1234567"
+                    notification_status: "sent"
+                failed:
+                  value:
+                    event_id: "01H9Z8XYZABCD1234567"
+                    notification_status: "failed"
         '400':
           description: Invalid payload
         '413':

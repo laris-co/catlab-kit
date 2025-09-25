@@ -36,14 +36,20 @@ export DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/..."
 ```bash
 uv venv
 uv pip install -e .[dev]
+make lint type  # optional pre-flight checks
 ```
 
-## Run tests (expected to fail initially)
+## Run tests (expected to fail initially until core impl)
 ```bash
 cd /home/floodboy/catlab-kit
 pytest -q
 ```
 
+## Dev server
+```bash
+make dev
+```
+
 ## Next steps
-- Implement FastAPI app in `src/` to satisfy contract in `/home/floodboy/catlab-kit/specs/001-build-a-simple/contracts/openapi.yaml`.
-- Provide `purge-events` admin command and runbook per FR-020.
+- Implement remaining services and endpoint logic to satisfy `/specs/001-build-a-simple/contracts/openapi.yaml`.
+- Use `python -m src.cli.admin purge-events` for admin (runbook in `docs/runbooks/purge-events.md`).
