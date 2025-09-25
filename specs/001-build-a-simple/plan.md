@@ -1,4 +1,3 @@
-
 # Implementation Plan: Webhook Proxy Service Foundation
 
 **Branch**: `001-build-a-simple` | **Date**: 2025-09-25 | **Spec**: `/specs/001-build-a-simple/spec.md`
@@ -31,30 +30,30 @@
 - Phase 3-4: Implementation execution (manual or via tools)
 
 ## Summary
-Deliver a lightweight webhook proxy that receives generic webhook payloads, stores both raw and extracted data for auditing, and forwards formatted notifications to downstream webhooks such as Discord. The service emphasizes minimal configuration, no authentication, and easy extensibility for new sources/destinations while running as a containerized FastAPI application orchestrated with Docker Compose alongside a local PocketBase instance.
+Deliver a containerised webhook proxy that ingests arbitrary webhook payloads, stores both raw and extracted data in PocketBase, and forwards formatted notifications to downstream webhooks (e.g., Discord). Runtime is FastAPI (Python 3.12+) with PocketBase embedded as a Go module (per "Use PocketBase as a framework") to enable custom Go migrations and business logic. Docker Compose orchestrates the FastAPI API container and a Go-based PocketBase service. Focus areas: minimal configuration, no auth, extensible mappings/destinations, operational runbooks, and automated Go migrations for schema evolution.
 
 ## Technical Context
-**Language/Version**: Python 3.12+ (per constitution)  
-**Primary Dependencies**: FastAPI, uv tooling for dependency/runtime management, PocketBase REST API, docker-compose runtime  
-**Storage**: PocketBase (SQLite-backed) running locally via Docker Compose  
-**Testing**: pytest, pytest-asyncio, httpx, pytest-mock, coverage XML/HTML + JUnit XML  
-**Target Platform**: Containerized Linux services orchestrated with Docker Compose (FastAPI app + PocketBase)  
-**Project Type**: single service backend  
-**Performance Goals**: Handle up to 50 requests/sec with p95 < 300ms for forwarding to Discord; queue retries for failures within 5 minutes  
-**Constraints**: No authentication layer, minimal configuration (YAML/env), Twelfth-Factor runbooks for admin/replay flows, avoid force operations, emit structured logs  
-**Scale/Scope**: MVP supporting 3 distinct webhook source configurations and 2 destination webhooks, local development deployment only
+**Language/Version**: Python 3.12+ for FastAPI service; Go 1.22+ for PocketBase embedding/migrations  
+**Primary Dependencies**: FastAPI, uv (dependency management), PocketBase framework SDK, pocketbase Go migration scaffolding, httpx, structlog, Prometheus instrumentation  
+**Storage**: PocketBase (SQLite) embedded via Go module, running in dedicated container with mounted volume  
+**Testing**: pytest, pytest-asyncio, httpx, pytest-mock, coverage (XML/HTML), mypy --strict, go test for migration package  
+**Target Platform**: Docker Compose (api + pocketbase containers) on Linux  
+**Project Type**: Single backend service with companion PocketBase framework app  
+**Performance Goals**: Sustain 50 req/s with p95 < 300ms for forwarding; persistence latency < 50ms per event  
+**Constraints**: No authentication, minimal configuration surface, Twelfth-Factor-compliant runbooks, no force commands, Go migrations auto-run on startup  
+**Scale/Scope**: MVP supporting 3 source configs, 2 destinations, local-only deployment
 
 ## Constitution Check
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- **Simplicity First**: Start with a single FastAPI app + PocketBase service using straightforward routing and storage; defer templating or plugin systems until multiple sources require them.
-- **Code Quality & PEP8**: Enforce Ruff + Black in pre-commit/CI; docstrings for public interfaces.
-- **Python 3.12+ / Typing**: Configure `pyproject.toml` with `requires-python >=3.12`; run mypy (strict) + pyright optional.
-- **Tests First with Reports**: Adopt TDD: write failing pytest suites (unit, integration) before implementation; configure pytest to emit JUnit/coverage artifacts to `test-reports/` and `coverage/`.
-- **Continuous Quality Gates**: CI pipeline fails on lint/type/test/report gaps; pre-commit mirrors.
-- **Commit & Push Traceability**: Work in atomic commits, push after each testable change, branch already tracked (`001-build-a-simple`).
-- **No Force Commands**: Document policy in plan/tasks; no destructive git/system operations.
-- **Twelfth-Factor Operations**: Capture runbooks for replay/backfill processes, ensure admin scripts share same container images & env vars; add to repo under `docs/runbooks/`.
+- **Simplicity First**: Keep architecture to two services (FastAPI + PocketBase Go app); defer advanced plugin system until needed.
+- **Code Quality & PEP 8**: Enforce Ruff + Black; docstrings for public FastAPI handlers and services.
+- **Python 3.12+ / Typing Everywhere**: `pyproject.toml` with `requires-python >=3.12`; mypy strict; pyright optional.
+- **Tests First with Mandatory Reports**: Contract/integration tests before implementation; pytest produces JUnit/coverage artifacts; go tests emit coverage for migrations if feasible.
+- **Continuous Quality Gates**: CI workflow runs lint/type/test/report checks for both Python and Go components.
+- **Commit & Push Traceability**: Work in atomic commits; branch already synced; push after every artifact.
+- **No Force Commands**: Reiterate policy in tasks; plan avoids destructive operations.
+- **Twelfth-Factor Operations**: Runbook for Go migration execution & replay; migrations executed through same container image; CLI for admin processes.
 
 ## Project Structure
 
@@ -77,12 +76,17 @@ src/
 │   ├── api/
 │   ├── mapping/
 │   ├── notifications/
-│   ├── pocketbase/
+│   ├── pocketbase_client.py
 │   ├── scheduler/
 │   └── cli.py
 ├── config/
 ├── logging.py
 └── main.py
+
+go/pocketbase/
+├── main.go              # PocketBase framework bootstrap
+├── migrations/          # Go migration files
+└── pb_hooks.go          # Optional hooks
 
 tests/
 ├── contract/
@@ -112,66 +116,43 @@ ios/ or android/
 └── platform-specific structure
 ```
 
-**Structure Decision**: Option 1 (single project) — FastAPI backend with tests directories
+**Structure Decision**: Option 1 (single backend service + Go PocketBase submodule)
 
 ## Phase 0: Outline & Research
-1. Document stack alignment:
-   - Confirm FastAPI + uv compatibility with Python 3.12, note docker-compose orchestration with PocketBase.
-   - Capture deployment topology (two containers: api, pocketbase) and shared env management.
-2. Investigate operational requirements:
-   - Define logging/metrics strategy (structured JSON logs, PocketBase audit use, forwarding metrics via Prometheus-compatible exporter TBD).
-   - Outline replay/backfill admin process and retention policy options; flag decisions needing product input (e.g., retention duration, replay approval flow).
-3. Study integration boundaries:
-   - Characterize PocketBase REST API usage (collections, schema definition, indexing) and limits for concurrent writes.
-   - Review target outbound webhook formatting (Discord) and general templating approach for future destinations.
-4. Capture open risks & assumptions:
-   - Throughput targets, rate limiting, retry backoff strategy.
-   - Storage growth expectations and pruning mechanism.
+1. Validate PocketBase framework embedding: confirm Docker build strategy for Go app, migration hooks, and API surface between FastAPI and PocketBase.
+2. Document Go migration workflow: command to create/run migrations (`go run github.com/pocketbase/pocketbase migrate`). Determine volume mounts to persist SQLite.
+3. Assess integration between FastAPI and PocketBase: REST client vs gRPC, authentication (admin token), rate limits.
+4. Investigate observability for PocketBase (logs, metrics) and reconcile with Twelfth-Factor requirements.
+5. Capture open questions: retention policy, replay authorization, throughput expectations.
 
-**Output**: research.md summarizing decisions, open questions for retention/rate limits, and recommended observability + runbook approach.
+**Output**: research.md summarising stack choices, Go migration strategy, observability, and remaining questions.
 
 ## Phase 1: Design & Contracts
 *Prerequisites: research.md complete*
 
-1. **Data modeling** (`data-model.md`):
-   - Detail PocketBase collections for `webhook_events`, `destinations`, `delivery_logs` with schema, indexes, and relationships.
-   - Define status transitions (`pending`, `forwarded`, `failed`, `retried`).
-   - Capture configuration structure (YAML/env) to map sources to destinations.
-2. **API contract** (`contracts/webhook-proxy.openapi.yaml`):
-   - Specify `POST /webhooks/{sourceId}` request schema and 202/4xx responses.
-   - Define `POST /webhooks/{sourceId}/replay` for admin-triggered replays (flagged pending decision) with clear TODO if disabled initially.
-   - Include error envelopes describing retry tokens/log IDs.
-3. **Quickstart** (`quickstart.md`):
-   - Steps to clone repo, install uv, start docker compose (api + pocketbase), configure `.env`/YAML, send sample webhook, verify stored event and forwarded Discord message.
-   - Include commands for generating JUnit and coverage reports, and referencing runbook for replays.
-4. **Clarification integration**:
-   - Align documentation to store raw payload + extracted fields.
-   - Note outstanding retention/rate limit decisions.
-5. **Agent context**: execute `.specify/scripts/bash/update-agent-context.sh codex` to refresh shared instructions with new stack info.
+1. **Data modeling** (`data-model.md`): define PocketBase collections with fields, indexes, relationships, and note Go migration file responsibilities.
+2. **API contract** (`contracts/webhook-proxy.openapi.yaml`): specify webhook ingest/replay endpoints, error schemas, correlation IDs.
+3. **PocketBase migration outline**: describe initial Go migration file responsibilities (create collections, indexes, initial config records).
+4. **Quickstart** (`quickstart.md`): include instructions to build/run Docker Compose, execute Go migrations, seed configs, run FastAPI tests.
+5. **Agent context**: run `.specify/scripts/bash/update-agent-context.sh codex` to register Go/PocketBase framework usage.
 
-**Output**: data-model.md, /contracts/* artifacts, quickstart.md, updated agent context.
+**Output**: data-model.md, contract spec, quickstart, updated agent context, migration outline.
 
 ## Phase 2: Task Planning Approach
 *This section describes what the /tasks command will do - DO NOT execute during /plan*
 
 **Task Generation Strategy**:
-- Seed tasks.md from template ensuring Twelfth-Factor checks (runbooks) and no-force policies are explicit.
-- Derive tasks from artifacts:
-  - Contract tests for webhook ingest, replay (if enabled), and failure logging.
-  - Data model migrations/collections for PocketBase.
-  - Notification formatter unit tests (Discord + placeholder future dest).
-  - Observability setup (structured logging, metrics counters).
-  - Runbook & admin CLI tasks.
-- Align tasks with TDD and ensure each has precise file paths under `src/` and `tests/`.
+- Seed tasks.md from template ensuring Twelfth-Factor and no-force gates.
+- Derive tasks from artifacts: contract/integration tests, PocketBase Go migrations, FastAPI endpoint implementations, logging/metrics, Docker Compose orchestration, runbooks.
+- Add Go-specific tasks (build pocketbase framework app, write migration file, run go tests).
 
 **Ordering Strategy**:
-- Maintain TDD flow: contract/integration tests → infra scaffolding → implementation → runbooks → QA artifacts.
-- Group by directories to maximize parallel [P] tasks where files differ.
-- Include Docker Compose & CI pipeline adjustments prior to deployment tasks.
+- TDD flow: tests → infrastructure/migrations → implementation → ops/runbooks → polish.
+- Distinguish Python vs Go tasks to allow parallelism on different directories.
 
-**Estimated Output**: ~28 tasks covering setup, tests, implementation, runbooks, and polish with explicit artifact verification.
+**Estimated Output**: ~30 tasks covering tests, implementation, Go migrations, observability, docs, CI.
 
-**IMPORTANT**: Tasks.md is generated in this phase to satisfy user requirement for end-to-end planning.
+**IMPORTANT**: Tasks.md is generated in this phase to satisfy downstream automation.
 
 ## Phase 3+: Future Implementation
 *These phases are beyond the scope of the /plan command*
@@ -186,7 +167,6 @@ ios/ or android/
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
 | *None* | — | — |
-
 
 ## Progress Tracking
 *This checklist is updated during execution flow*

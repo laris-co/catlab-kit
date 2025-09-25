@@ -6,35 +6,42 @@
 
 ## Decisions
 
-### Stack & Tooling
-- **Python Runtime**: Adopt Python 3.12 for compliance with constitution Principle III.
-- **Framework**: FastAPI chosen for async request handling, automatic schema docs, and ecosystem support.
-- **Runtime Tooling**: Use `uv` for dependency management and packaging; aligns with Python 3.12 and simplifies reproducible installs.
-- **Deployment**: Compose two services: `api` (FastAPI) and `pocketbase`. Compose file defines shared network, env vars, and volumes for PocketBase storage.
+### PocketBase as Framework
+- Adopt PocketBase framework mode (https://pocketbase.io/docs/use-as-framework/) embedding the server in a Go binary so we can add custom migrations and hooks.
+- Structure Go module under `go/pocketbase` with `main.go` to start PocketBase, register migrations, and expose REST interface at `:8090`.
+- Mount persistent volume for `pb_data/` in Docker Compose to retain SQLite data.
 
-### Storage & Data Flow
-- **Database**: PocketBase (SQLite-backed) stores webhook events, destination mappings, and delivery logs.
-- **Event Persistence**: Store both raw payload JSON and extracted fields per clarification; raw payload kept in `webhook_events.raw_payload` (JSON) and normalized fields in `webhook_events.payload_fields` (JSONB-like).
-- **Retention Strategy**: Default to 30 days retention with configurable setting; requires confirmation (open question).
+### Go Migrations
+- Use PocketBase migrations package (`github.com/pocketbase/pocketbase/migrations`) to manage schema via Go files.
+- Create initial migration `001_init_collections.go` to define `webhook_events`, `destinations`, `source_configs`, and `delivery_logs` collections, including indexes and constraints consistent with data-model.md.
+- Run migrations on PocketBase startup (inside `main.go`) and expose CLI command `go run go/pocketbase/main.go migrate` for manual execution.
 
-### Observability & Operations
-- **Logging**: Emit structured JSON logs via `structlog` (or FastAPI logging config) with correlation IDs per event.
-- **Metrics**: Integrate Prometheus FastAPI instrumentation (e.g., `prometheus-fastapi-instrumentator`) publishing to `/metrics` for future scraping.
-- **Tracing**: Optional future addition; not part of MVP.
-- **Runbooks**: Create `docs/runbooks/replay.md` describing replay CLI/endpoint, required env vars, and rollback steps.
+### FastAPI Service
+- Python 3.12 with FastAPI/uvicorn; manage dependencies via `uv` for reproducible builds.
+- Communicate with PocketBase through REST using admin token stored in environment (`POCKETBASE_ADMIN_TOKEN`).
+- Store raw payload + extracted fields per clarification; maintain correlation IDs across logs and delivery logs.
 
-### Notification Formatting
-- **Destination Templates**: Provide Discord webhook formatter (username, avatar, content) with fallback plain JSON. Abstract formatters to allow new destinations.
-- **Retry Strategy**: Exponential backoff (2^n seconds, max 5 attempts) stored per delivery log entry.
+### Containerization
+- Docker Compose orchestrates:
+  - `api`: FastAPI app, depends_on `pocketbase`, uses `uv` to install deps, exposes `:8000`.
+  - `pocketbase`: Go binary built via multi-stage Dockerfile (Go build stage + minimal runtime), exposes `:8090` and runs migrations on start.
+- Shared `.env` config consumed by both services via Compose.
+
+### Observability & Ops
+- FastAPI: structured JSON logs (structlog), Prometheus instrumentation via `prometheus-fastapi-instrumentator`.
+- PocketBase: enable request logging and pipe to container stdout; capture metrics via sidecar in future (out of scope for MVP).
+- Runbooks: create `docs/runbooks/replay.md` and `docs/runbooks/migrations.md` documenting replay CLI and migration execution flow.
 
 ## Open Questions / Risks
-- **Retention Duration**: Need stakeholder confirmation on 30-day purge (FR gap from spec).
-- **Replay Authorization**: Clarify who can trigger replays since no auth is planned; propose limited to CLI command executed by operator (document in runbook).
-- **Rate Limits**: Need target inbound/outbound rate limits to size queues and backoff windows.
-- **PocketBase Limits**: Validate concurrent write throughput and index strategy to avoid contention.
+- Retention duration for webhook events (default 30 days) — confirm with stakeholders.
+- Rate limiting thresholds for inbound requests and replay operations.
+- Replay authorization (currently CLI-only to avoid auth requirements) — confirm acceptable.
+- PocketBase performance under concurrent writes at projected throughput — monitor during integration.
+- Discord webhook rate limits — ensure retry strategy respects platform constraints.
 
 ## References
+- PocketBase framework docs: https://pocketbase.io/docs/use-as-framework/
+- PocketBase migrations: https://pocketbase.io/docs/migrations/
 - FastAPI docs: https://fastapi.tiangolo.com/
-- PocketBase REST API: https://pocketbase.io/docs/api-records
-- Discord Webhook Formatting: https://discord.com/developers/docs/resources/webhook
-- `uv` project: https://github.com/astral-sh/uv
+- Discord Webhook formatting: https://discord.com/developers/docs/resources/webhook
+- uv project: https://github.com/astral-sh/uv

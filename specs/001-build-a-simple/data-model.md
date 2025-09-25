@@ -1,74 +1,75 @@
 # Data Model — Webhook Proxy Service Foundation
 
-## Collections
+## PocketBase Collections (defined via Go migrations)
 
 ### webhook_events
 - `id` (PocketBase record id, UUID string) — primary key.
 - `source_identifier` (string, indexed) — matches configured source key.
-- `received_at` (datetime, indexed) — timestamp of inbound event.
+- `received_at` (datetime, indexed) — inbound timestamp.
 - `raw_payload` (JSON) — full payload stored verbatim.
-- `payload_fields` (JSON) — extracted key/value pairs per configuration mapping.
-- `delivery_status` (enum: `pending`, `forwarded`, `failed`, `retrying`) — current forwarding state.
-- `last_delivery_attempt_at` (datetime, nullable) — last attempt timestamp.
-- `delivery_attempts` (int) — count of attempts taken.
+- `payload_fields` (JSON) — extracted fields per configuration mapping.
+- `delivery_status` (enum: `pending`, `forwarded`, `retrying`, `failed`).
+- `last_delivery_attempt_at` (datetime, nullable).
+- `delivery_attempts` (int, default 0).
 - `error_message` (string, nullable, 512 chars) — last failure reason.
-- `destination_ids` (array<string>) — references to `destinations.id` attempted.
+- `destination_ids` (array<string>) — references attempted destinations.
 
 **Indexes**
-- Composite index `(source_identifier, received_at)` for querying recent events by source.
-- Index on `delivery_status` for retry polling.
+- Composite `(source_identifier, received_at)` for recent lookups.
+- Index on `delivery_status` for retry worker queries.
 
 ### destinations
-- `id` (PocketBase record id) — primary key.
-- `name` (string, unique) — human-friendly label.
+- `id` — primary key.
+- `name` (string, unique).
 - `destination_type` (enum: `discord_webhook`, `generic_json`).
-- `endpoint_url` (string, stored encrypted via PocketBase secrets) — target webhook URL.
-- `enabled` (boolean) — whether forwarding is active.
-- `formatter_template` (JSON) — configuration for message formatting (fields, template string).
-- `metadata` (JSON) — optional destination-specific settings (e.g., headers).
+- `endpoint_url` (text, encrypted via PocketBase secret storage).
+- `enabled` (bool).
+- `formatter_template` (JSON) — message structure.
+- `metadata` (JSON) — optional headers or overrides.
 
 **Indexes**
-- Unique index on `name`.
-- Index on `destination_type` to support filtering.
+- Unique `name`.
+- Index `destination_type` for filtering.
 
 ### source_configs
-- `id` (PocketBase record id) — primary key.
-- `source_identifier` (string, unique) — path segment used in webhook URL.
-- `description` (string) — short description of the source system.
-- `field_mappings` (JSON) — array of mapping rules: `{path, alias, required}`.
-- `destination_order` (array<string>) — ordered list of `destinations.id` to send notifications to.
-- `replay_enabled` (boolean) — whether replays are allowed for this source.
-- `throttle_per_minute` (int, nullable) — optional rate limit per source.
+- `id` — primary key.
+- `source_identifier` (string, unique) — used in webhook path.
+- `description` (string).
+- `field_mappings` (JSON array) — `{path, alias, required}` definitions.
+- `destination_order` (array<string>) — ordered destination IDs.
+- `replay_enabled` (bool).
+- `throttle_per_minute` (int, nullable).
 
 ### delivery_logs
-- `id` (PocketBase record id) — primary key.
-- `event_id` (relation -> webhook_events.id)` — the event that triggered the delivery.
-- `destination_id` (relation -> destinations.id)` — destination attempted.
-- `attempt_number` (int) — sequential attempt.
-- `attempted_at` (datetime) — time of attempt.
+- `id` — primary key.
+- `event_id` (relation -> webhook_events.id).
+- `destination_id` (relation -> destinations.id).
+- `attempt_number` (int).
+- `attempted_at` (datetime).
 - `status` (enum: `success`, `failed`, `skipped`).
 - `response_status_code` (int, nullable).
-- `response_body` (JSON, optional truncated) — snippet for debugging (<= 2 KB).
+- `response_body` (JSON, nullable, truncate to 2 KB).
 - `error_message` (string, nullable).
 
 **Indexes**
-- Composite index `(event_id, destination_id, attempt_number)` for dedupe and reporting.
+- Composite `(event_id, destination_id, attempt_number)`.
 
 ## Relationships & Constraints
-- `webhook_events.destination_ids` references `destinations.id` but authoritative join occurs via `delivery_logs` to track each attempt.
-- Deleting a destination should soft-disable it (set `enabled = false`) to preserve history; actual record deletion should be prevented via PocketBase rules.
-- `source_configs.destination_order` must only reference enabled destinations (enforced in application validation).
+- `destination_order` must reference enabled destinations; enforced in service validation.
+- Soft-delete destinations by toggling `enabled`; migrations enforce rule via PocketBase list rules.
+- Replay resets `delivery_status` to `pending` and increments `delivery_attempts`.
 
-## State Transitions
-1. `pending` (initial) → `forwarded` when at least one destination succeeds and no retries pending.
-2. `pending` → `retrying` after first failure; stays `retrying` until success or retries exhausted.
-3. `retrying` → `failed` when attempts exceed policy (default 5).
-4. Manual replay resets status to `pending`, increments `delivery_attempts`, and appends to `delivery_logs`.
+## Migration Responsibilities (Go)
+- `001_init_collections.go`: create collections, indexes, and base rules.
+- `002_seed_destinations.go` (optional): insert sample destination records for quickstart.
+- Migrations run automatically on PocketBase startup (`pb.App.Migrations().Register(...)`).
+- Provide CLI command `go run go/pocketbase/main.go migrate up/down` for manual control; document in runbook.
 
 ## Configuration Artifacts
-- `config/sources.yaml` (managed file) duplicates subset of PocketBase configuration for bootstrap; migration task ensures config is synchronized.
-- Environment variables: `DISCORD_WEBHOOK_URL_*`, `POCKETBASE_URL`, `POCKETBASE_ADMIN_TOKEN`, `APP_SECRET_KEY` for signing correlation IDs.
+- `config/sources.yaml` bootstraps source mappings; sync job ensures consistency with PocketBase records.
+- Environment variables: `POCKETBASE_URL`, `POCKETBASE_ADMIN_TOKEN`, destination webhook URLs, `APP_SECRET_KEY` for correlation IDs.
 
 ## Outstanding Decisions
-- Final retention window for `webhook_events` (default 30 days assumed).
-- Whether to expose public replay endpoint or limit to CLI script (currently favour CLI runbook).
+- Confirm retention window (30-day default currently assumed).
+- Define max retry attempts/backoff strategy parameters.
+- Determine whether replay endpoint is exposed via API or CLI-only (default CLI).

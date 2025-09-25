@@ -80,6 +80,7 @@ An operations engineer wants to capture webhook notifications from multiple SaaS
 - **FR-004**: The service MUST format and deliver a notification to at least one outbound webhook destination (e.g., Discord-style webhook URL) for every successfully stored event.
 - **FR-005**: The service MUST continue processing new events even if a particular destination call fails, and MUST record the failure for later review.
 - **FR-006**: The service MUST provide a minimal configuration interface (file or environment-based) to define sources, field mappings, and destination endpoints.
+- **FR-007**: The platform MUST supply Go-based PocketBase migrations that run automatically on startup and are invocable via CLI for schema changes.
 
 ### Key Entities *(include if feature involves data)*
 - **WebhookEvent**: Represents a single inbound webhook occurrence; includes source identifier, received timestamp, stored raw payload body, extracted fields, and delivery status.

@@ -1,30 +1,33 @@
 # Quickstart — Webhook Proxy Service Foundation
 
-This guide demonstrates how to launch the webhook proxy locally, send a sample webhook, verify storage/forwarding, and run the quality gates mandated by the constitution.
+This guide shows how to run the webhook proxy locally using FastAPI + PocketBase (framework mode), execute Go migrations, and validate quality gates.
 
 ## Prerequisites
-- Python 3.12 installed locally (used primarily for tooling/tests).
-- `uv` CLI installed (https://github.com/astral-sh/uv#installation).
-- Docker Desktop or Docker Engine + Docker Compose v2.
-- `curl` or `httpie` for test requests.
+- Python 3.12+
+- `uv` CLI (https://github.com/astral-sh/uv#installation)
+- Go 1.22+
+- Docker Engine with Docker Compose v2
+- `curl` or `httpie`
 
 ## 1. Clone & Bootstrap
 ```bash
-# Clone repository
-uv tool run git clone git@github.com:laris-co/catlab-kit.git
+git clone git@github.com:laris-co/catlab-kit.git
 cd catlab-kit
-
-# Ensure feature branch
 git checkout 001-build-a-simple
 
-# Sync dependencies
-uv sync  # installs FastAPI, pytest, ruff, mypy, etc.
+# Sync Python dependencies
+uv sync
+
+# Install Go dependencies
+cd go/pocketbase
+go mod tidy
+cd -
 ```
 
 ## 2. Configure Environment
 ```bash
 cp .env.example .env
-# Edit .env to set:
+# Update values:
 #   POCKETBASE_URL=http://localhost:8090
 #   POCKETBASE_ADMIN_TOKEN=<pb_admin_token>
 #   DISCORD_WEBHOOK_URL_OPERATIONS=<discord_url>
@@ -33,24 +36,32 @@ cp .env.example .env
 
 Optional: Update `config/sources.yaml` with source identifiers, field mappings, and destination ordering.
 
-## 3. Launch Services
+## 3. Build PocketBase Framework App & Migrations
 ```bash
-# Build API image and start both containers
-docker compose up --build
+cd go/pocketbase
+# Generate new migration (example)
+go run github.com/pocketbase/pocketbase/cmd/pocketbase migrate create add_new_collection
+# Run all migrations
+GO_ENV=development go run main.go migrate up
+cd -
+```
 
-# Services expose:
-# - FastAPI: http://localhost:8000
+## 4. Launch Services
+```bash
+docker compose up --build
+# Services:
+# - FastAPI API: http://localhost:8000
 # - PocketBase admin UI: http://localhost:8090/_/
 ```
 
-Wait until logs show `Application startup complete` and `PocketBase Server started`.
+Wait for logs indicating `Application startup complete` (FastAPI) and `PocketBase server started`.
 
-## 4. Seed Destinations & Sources
-Use the provided admin CLI (once implemented) or PocketBase UI:
+## 5. Seed Destinations & Sources
+Use the CLI (`uv run python -m app.cli seed`) or PocketBase UI:
 1. Create destinations (`destinations` collection) with Discord webhook URLs.
-2. Create source config (`source_configs` collection) defining mappings and destination order.
+2. Create source config (`source_configs`) defining field mappings and destination order.
 
-## 5. Send Sample Webhook
+## 6. Send Sample Webhook
 ```bash
 curl -X POST \
   http://localhost:8000/webhooks/github-deploy \
@@ -61,40 +72,41 @@ curl -X POST \
 Expected outcome:
 - Response `202 Accepted` with correlation ID.
 - PocketBase `webhook_events` record contains raw payload and extracted fields.
-- Discord channel receives formatted deployment notification.
+- Discord channel receives formatted message.
 
-## 6. Run Automated Quality Gates
+## 7. Run Automated Quality Gates
 ```bash
-# Lint & format checks
+# Lint & format
 uv run ruff check src tests
 uv run black --check src tests
 
 # Type checking
 uv run mypy --strict src
 
-# Tests with reports
+# Unit & integration tests with reports
 uv run pytest \
   --junitxml=test-reports/junit.xml \
   --cov=src --cov-report=xml:coverage/coverage.xml \
   --cov-report=html:coverage/html
+
+# Go tests for migrations
+cd go/pocketbase
+go test ./...
+cd -
 ```
 
-Artifacts:
+Artifacts generated:
 - `test-reports/junit.xml`
 - `coverage/coverage.xml`
 - `coverage/html/index.html`
 
-## 7. Replay Runbook (Admin Process)
-Follow `docs/runbooks/replay.md`:
-```bash
-uv run python -m app.cli replay --event-id <id>
-```
-- Ensures Twelfth-Factor parity by running through same containerized code.
-- Logs replay attempt in `delivery_logs` and updates status.
+## 8. Replay & Admin Runbooks
+- Replay event: `uv run python -m app.cli replay --event-id <id>`
+- Migration runbook: `docs/runbooks/migrations.md` describes manual/CI execution
 
-## 8. Shut Down
+## 9. Shut Down
 ```bash
 docker compose down
 ```
 
-> Remember to commit and push after each meaningful change. Avoid `--force` operations per constitution.
+> Commit and push after each meaningful change. Do not use `--force` or other destructive commands.
