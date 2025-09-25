@@ -75,11 +75,6 @@ An operations engineer wants to capture webhook notifications from multiple SaaS
 - **FR-004**: The service MUST format and deliver a notification to at least one outbound webhook destination (e.g., Discord-style webhook URL) for every successfully stored event.
 - **FR-005**: The service MUST continue processing new events even if a particular destination call fails, and MUST record the failure for later review.
 - **FR-006**: The service MUST provide a minimal configuration interface (file or environment-based) to define sources, field mappings, and destination endpoints.
-- **FR-007**: The service MUST support adding new event field mappings or destinations without code changes beyond configuration updates.
-- **FR-008**: The service MUST log all received events with correlation identifiers to trace inbound to outbound activity.
-- **FR-009**: The service MUST support replaying stored events to destinations on demand. [NEEDS CLARIFICATION: Does the initial release need a replay capability or is archival storage sufficient?]
-- **FR-010**: The service MUST define retention and purging rules for stored events. [NEEDS CLARIFICATION: How long should events remain in the database?]
-- **FR-011**: The service MUST specify behavior for oversized payloads or rate limits. [NEEDS CLARIFICATION: What payload size and throughput should be assumed?]
 
 ### Key Entities *(include if feature involves data)*
 - **WebhookEvent**: Represents a single inbound webhook occurrence; includes source identifier, received timestamp, raw payload reference, extracted fields, delivery status.
