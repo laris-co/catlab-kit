@@ -98,7 +98,7 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 ## Notes
 - [P] tasks = different files, no dependencies
 - Verify tests fail before implementing
-- Commit after each task
+- Commit after each task and push to remote
 - Avoid: vague tasks, same file conflicts
 
 ## Task Generation Rules
@@ -130,3 +130,4 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 - [ ] Each task specifies exact file path
 - [ ] No task modifies same file as another [P] task
  - [ ] Test reports produced (JUnit XML + coverage XML/HTML)
+ - [ ] Each task has at least one commit pushed to remote

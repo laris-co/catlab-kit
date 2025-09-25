@@ -1,16 +1,17 @@
 <!--
 Sync Impact Report
-- Version change: unversioned → 1.0.0
-- Modified principles: N/A (newly defined)
-- Added sections: "Quality Standards & Constraints", "Development Workflow & Quality Gates"
+- Version change: 1.0.0 → 1.1.0
+- Modified principles: Added VI. Commit and Push Traceability
+- Added sections: None (expanded Workflow & Gates content)
 - Removed sections: None
 - Templates requiring updates:
-  ✔ .specify/templates/plan-template.md (updated: version reference, Python 3.12+ example)
-  ✔ .specify/templates/tasks-template.md (updated: Python 3.12+, lint/type-check/reporting requirements)
+  ✔ .specify/templates/plan-template.md (updated: version reference, commit/push gate)
+  ✔ .specify/templates/tasks-template.md (updated: push requirement + checklist)
   ⚠ .specify/templates/spec-template.md (no change needed)
   ⚠ .specify/templates/commands/* (not present in repo)
 - Follow-up TODOs:
-  - Set CI to always publish artifacts from test-reports/ and coverage/ (XML + HTML).
+  - Configure branch protections for `main` (require status checks, disallow force pushes).
+  - Ensure CI uploads `test-reports/` and `coverage/` artifacts on every run.
 -->
 
 # catlab-kit Constitution
@@ -62,6 +63,15 @@ Rationale: Fast feedback plus auditable reports enforce quality over time.
 - Pre-commit hooks mirror CI checks to prevent drift.
 Rationale: Automated gates maintain standards without manual policing.
 
+### VI. Commit and Push Traceability
+- Work in short, atomic commits with imperative, descriptive messages.
+- After each meaningful change (tests, code, docs, or config), commit and push
+  to the feature branch immediately. Do not accumulate local-only work.
+- Use feature branches and open PRs to merge into protected branches (e.g.,
+  `main`). Do not force-push protected branches.
+Rationale: Frequent commit/push cycles create transparent progress, reduce
+integration risk, and improve recovery.
+
 ## Quality Standards & Constraints
 
 - Language/Runtime: Python >= 3.12 across local and CI.
@@ -90,6 +100,8 @@ Rationale: Automated gates maintain standards without manual policing.
   - PEP 8 clean (Ruff/Black) and type-check clean (mypy/pyright).
   - Tests pass and required reports are present.
   - Reviewer confirms "Simplicity First" was observed.
+  - Commit history shows small, logical steps; all commits are pushed to
+    remote.
 
 ## Governance
 <!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
@@ -108,5 +120,5 @@ Compliance Review Expectations:
   (`.specify/memory/constitution.md`).
 - CI enforces gates for style, typing, tests, and report artifacts.
 
-**Version**: 1.0.0 | **Ratified**: 2025-09-25 | **Last Amended**: 2025-09-25
-<!-- Based on git history, ratification inferred as first introduction date of this constitution. -->
+**Version**: 1.1.0 | **Ratified**: 2025-09-25 | **Last Amended**: 2025-09-25
+<!-- Ratified on initial adoption; amended to add commit/push traceability. -->
