@@ -23,6 +23,7 @@
    → Same file = sequential (no [P])
    → Tests before implementation (TDD)
    → No force operations (no `--force`, `--force-with-lease`, `rm -rf`)
+   → Document Twelfth-Factor admin processes (runbooks, scripts) alongside new features
 5. Number tasks sequentially (T001, T002...)
 6. Generate dependency graph
 7. Create parallel execution examples
@@ -101,6 +102,7 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 - Verify tests fail before implementing
 - Commit after each task and push to remote
 - Never use force flags; choose safe alternatives (revert, additive changes)
+- Capture Twelfth-Factor runbooks or scripts for any new admin process
 - Avoid: vague tasks, same file conflicts
 
 ## Task Generation Rules
@@ -134,3 +136,4 @@ Task: "Integration test auth in tests/integration/test_auth.py"
 - [ ] Test reports produced (JUnit XML + coverage XML/HTML)
 - [ ] Each task has at least one commit pushed to remote
 - [ ] No force flags used (git `--force`/`--force-with-lease`, `rm -rf`, similar)
+- [ ] Twelfth-Factor runbooks/scripts created for operational steps

@@ -1,18 +1,19 @@
 <!--
 Sync Impact Report
-- Version change: 1.1.0 → 1.2.0
-- Modified principles: Added VII. No Force Commands; tightened VI push policy
-- Added sections: None (expanded Workflow & Gates content)
+- Version change: 1.2.0 → 1.3.0
+- Modified principles: Added VIII. Twelfth-Factor Operations Readiness (new)
+- Added sections: None
 - Removed sections: None
 - Templates requiring updates:
-  ✔ .specify/templates/plan-template.md (updated: version reference + no-force gate)
-  ✔ .specify/templates/tasks-template.md (updated: push requirement + no-force checklist)
+  ✔ .specify/templates/plan-template.md (updated: version reference + Twelfth-Factor gate)
+  ✔ .specify/templates/tasks-template.md (updated: admin task reminders + checklist)
   ⚠ .specify/templates/spec-template.md (no change needed)
   ⚠ .specify/templates/commands/* (not present in repo)
 - Follow-up TODOs:
   - Configure branch protections for `main` (require status checks, disallow force pushes).
   - Ensure CI uploads `test-reports/` and `coverage/` artifacts on every run.
   - Enforce "no force" in CI (pre-push hook + pipeline grep/block rules).
+  - Establish runbook repository for Twelfth-Factor admin processes (track in ops backlog).
 -->
 
 # catlab-kit Constitution
@@ -83,6 +84,19 @@ integration risk, and improve recovery.
 Rationale: Forced operations hide underlying issues and risk data loss or
 pipeline instability. Absolute prohibition ensures safety and traceability.
 
+### VIII. Twelfth-Factor Operations Readiness
+- Treat one-off admin and maintenance processes as first-class citizens: they
+  MUST run using the same release code, configuration, and environment as the
+  long-running service.
+- Every feature introducing new operational actions MUST provide documented
+  runbooks or scripts describing how to execute, monitor, and roll back those
+  actions.
+- Operational tooling MUST be idempotent, scriptable, and safe to execute on
+  production data. Manual console changes are prohibited unless codified as
+  automated admin processes.
+Rationale: Twelfth-Factor discipline keeps operational tasks predictable,
+auditable, and consistent with deployed code.
+
 ## Quality Standards & Constraints
 
 - Language/Runtime: Python >= 3.12 across local and CI.
@@ -98,6 +112,9 @@ pipeline instability. Absolute prohibition ensures safety and traceability.
   paths defined above. Keep tests fast and deterministic.
 - Artifacts: CI must archive `test-reports/` and `coverage/` as build
   artifacts for each run.
+- Operations: Admin processes and maintenance scripts must be defined as
+  version-controlled commands sharing the same configuration surface as the
+  primary service; include runbooks detailing invocation and rollback steps.
 
 ## Development Workflow & Quality Gates
 
@@ -115,6 +132,8 @@ pipeline instability. Absolute prohibition ensures safety and traceability.
     remote.
   - No forced operations used or proposed (git `--force`/`--force-with-lease`,
     `git reset --hard`, `rm -rf`, similar flags).
+  - Twelfth-Factor requirements satisfied: admin processes documented,
+    scripted, and share the same config as the app.
 
 ## Governance
 <!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
@@ -132,6 +151,8 @@ Compliance Review Expectations:
 - All PRs include a "Constitution Check" section referencing this file
   (`.specify/memory/constitution.md`).
 - CI enforces gates for style, typing, tests, and report artifacts.
+- Reviewers verify new operational work provides Twelfth-Factor-compliant
+  admin processes or runbooks before approval.
 
-**Version**: 1.2.0 | **Ratified**: 2025-09-25 | **Last Amended**: 2025-09-25
-<!-- Amended to prohibit force commands and tighten push policy. -->
+**Version**: 1.3.0 | **Ratified**: 2025-09-25 | **Last Amended**: 2025-09-25
+<!-- Amended to add Twelfth-Factor operations readiness guidance. -->
