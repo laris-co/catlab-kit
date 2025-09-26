@@ -39,10 +39,11 @@ Execute the following workflow from /home/floodboy/catlab-kit while honoring the
    - Otherwise, run `git push`. Never use `--force` or related destructive flags.
 8. Prepare PR metadata:
    - Choose the base branch (default `main` unless specified in $ARGUMENTS).
-   - Derive PR title/body from $ARGUMENTS; if missing, draft concise text summarizing the change, tests, and any follow-up.
+   - Draft the PR title and a Markdown body summarizing changes, tests, and follow-up.
+   - Write the body to a temporary file (e.g., `/tmp/pr-body.md`) so that newline formatting is preserved.
 9. Create or update the PR:
    - Check if a PR already exists with `gh pr view --json number --head $(git rev-parse --abbrev-ref HEAD)`. If one exists, report its URL instead of creating a duplicate.
-   - Otherwise, run `gh pr create --base <base> --head $(git rev-parse --abbrev-ref HEAD) --title "<title>" --body "<body>"` (use `--fill` only when suitable templates exist and no custom text is supplied).
+   - Otherwise, run `gh pr create --base <base> --head $(git rev-parse --abbrev-ref HEAD) --title "<title>" --body-file /tmp/pr-body.md` (adjust the path if a different file name was used). Use `--fill` only when suitable templates exist and no custom text is supplied.
 10. Report results to the user including:
     - Current branch and commit hash (`git rev-parse HEAD`).
     - Test/linters status.
