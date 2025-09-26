@@ -20,7 +20,7 @@ I will launch a Codex worker with web search enabled to research your topic and 
 - **Executive Summary**: Brief overview
 - **Key Findings**: Main discoveries
 - **Technical Specifications**: Versions, requirements, etc.
-- **References & Sources**: **CRITICAL** - Full URLs for all sources
+- **References & Sources**: **CRITICAL** - Direct URLs only (no markdown titles)
 - **Conclusion**: Summary and recommendations
 
 The output will be saved to `.catlab/research/` with proper naming:
@@ -30,7 +30,7 @@ The output will be saved to `.catlab/research/` with proper naming:
 
 ✅ **Web search enabled** - Gets latest information
 ✅ **Structured output** - Consistent report format
-✅ **Full URL references** - Complete, clickable links
+✅ **Direct URL citations** - Clean URLs without markdown titles
 ✅ **Process ID tracking** - Full traceability
 ✅ **Medium reasoning** - Balanced depth and speed
 
@@ -67,4 +67,8 @@ Features:
 - ✅ PLACEHOLDER → process ID replacement
 - ✅ Automatic directory creation
 
-Research results will include complete URLs for all sources referenced!
+Research results will include clean, direct URLs without markdown formatting!
+
+## Citation Format
+✅ **Correct**: (https://docs.docker.com/build/cache/optimize/, https://github.com/github/spec-kit)
+❌ **Incorrect**: ([Docker Cache](https://docs.docker.com/build/cache/optimize/), [Spec-Kit](https://github.com/github/spec-kit))

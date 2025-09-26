@@ -56,23 +56,24 @@ Create a comprehensive markdown report with the following structure:
 - Technical details and specifications
 
 ### References & Sources
-**CRITICAL**: Include FULL URLs for all sources referenced:
-- [Source Name](https://complete-url-here)
-- [Documentation](https://full-documentation-url)
-- [Official Site](https://complete-official-url)
-- [GitHub/Repository](https://complete-repo-url)
+**CRITICAL**: Include DIRECT URLs only (no markdown titles):
+- https://complete-url-here
+- https://full-documentation-url
+- https://complete-official-url
+- https://complete-repo-url
 
 ### Conclusion
 [Summary and recommendations based on research]
 
 **IMPORTANT INSTRUCTIONS**:
 1. Replace PLACEHOLDER in filename '${OUTPUT_FILE}' with your process ID
-2. Always include complete, clickable URLs starting with https:// in References section
-3. Verify all links are full URLs with domains
-4. Include publication dates where available
-5. Prioritize official documentation and authoritative sources
-6. Use web search to get the most current information
-7. Structure the content for easy scanning and reference
+2. Use DIRECT URLs ONLY in citations (NOT [Title](URL) format)
+3. Example: (https://docs.docker.com/build/cache/, https://github.com/github/spec-kit)
+4. Do NOT use markdown link titles: AVOID ([Docker Cache](https://url), [Spec-Kit](https://url))
+5. Include publication dates where available
+6. Prioritize official documentation and authoritative sources
+7. Use web search to get the most current information
+8. Keep all citations clean and simple with direct URLs only
 
 Save output to: ${OUTPUT_FILE}"
 
