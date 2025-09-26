@@ -1,0 +1,265 @@
+openapi: 3.0.0
+info:
+  title: Claude Code Slash Command API
+  version: 1.0.0
+  description: API specification for migrated slash commands
+
+paths:
+  /commands/register:
+    post:
+      summary: Register a new slash command
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SlashCommand'
+      responses:
+        '201':
+          description: Command registered successfully
+        '409':
+          description: Command name already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commands/execute:
+    post:
+      summary: Execute a slash command
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - command
+              properties:
+                command:
+                  type: string
+                  description: Command name (without slash)
+                  example: "context"
+                args:
+                  type: array
+                  items:
+                    type: string
+                  example: ["123"]
+                flags:
+                  type: object
+                  properties:
+                    verbose:
+                      type: boolean
+                      default: false
+                    dryRun:
+                      type: boolean
+                      default: false
+      responses:
+        '200':
+          description: Command executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommandOutput'
+        '400':
+          description: Invalid arguments or flags
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Command not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Command execution failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commands/list:
+    get:
+      summary: List all available commands
+      responses:
+        '200':
+          description: List of commands
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommandInfo'
+
+  /commands/autocomplete:
+    get:
+      summary: Get autocomplete suggestions
+      parameters:
+        - name: prefix
+          in: query
+          schema:
+            type: string
+          description: Command prefix to match
+          example: "con"
+      responses:
+        '200':
+          description: Autocomplete suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AutocompleteSuggestion'
+
+components:
+  schemas:
+    SlashCommand:
+      type: object
+      required:
+        - name
+        - description
+        - handler
+      properties:
+        name:
+          type: string
+          pattern: '^[a-z][a-z0-9-]*$'
+          example: "context"
+        description:
+          type: string
+          maxLength: 80
+          example: "Create GitHub context issue and compact"
+        arguments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArgumentSpec'
+        flags:
+          type: array
+          items:
+            $ref: '#/components/schemas/FlagSpec'
+
+    ArgumentSpec:
+      type: object
+      required:
+        - name
+        - required
+      properties:
+        name:
+          type: string
+          example: "issue_number"
+        description:
+          type: string
+          example: "GitHub issue number"
+        required:
+          type: boolean
+          example: false
+        type:
+          type: string
+          enum: [string, number]
+          default: string
+
+    FlagSpec:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          pattern: '^--[a-z][a-z0-9-]*$'
+          example: "--verbose"
+        description:
+          type: string
+          example: "Show detailed output"
+        shortForm:
+          type: string
+          pattern: '^-[a-z]$'
+          example: "-v"
+        type:
+          type: string
+          enum: [boolean, string]
+          default: boolean
+
+    CommandOutput:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        output:
+          type: string
+          example: "Context issue #456 created successfully"
+        metadata:
+          type: object
+          properties:
+            issueNumber:
+              type: integer
+              example: 456
+            duration:
+              type: integer
+              description: Execution time in milliseconds
+              example: 1250
+
+    ErrorResponse:
+      type: object
+      required:
+        - code
+        - message
+        - remedy
+      properties:
+        code:
+          type: string
+          pattern: '^[A-Z][A-Z0-9_]*$'
+          example: "ERR_NO_GIT"
+        message:
+          type: string
+          example: "Not in a git repository"
+        remedy:
+          type: string
+          example: "Run 'git init' or navigate to a git repository"
+        context:
+          type: object
+          additionalProperties: true
+          example:
+            command: "context"
+            cwd: "/home/user/projects"
+
+    CommandInfo:
+      type: object
+      required:
+        - name
+        - description
+      properties:
+        name:
+          type: string
+          example: "context"
+        description:
+          type: string
+          example: "Create GitHub context issue and compact"
+        aliases:
+          type: array
+          items:
+            type: string
+          example: ["ccc"]
+        flags:
+          type: array
+          items:
+            type: string
+          example: ["--verbose", "--dry-run"]
+
+    AutocompleteSuggestion:
+      type: object
+      required:
+        - command
+        - description
+      properties:
+        command:
+          type: string
+          example: "/context"
+        description:
+          type: string
+          example: "Create GitHub context issue and compact"
+        hint:
+          type: string
+          example: "Usage: /context [--verbose] [--dry-run]"
