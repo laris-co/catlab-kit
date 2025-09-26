@@ -172,6 +172,13 @@ Save output to: ${OUTPUT_FILE}"
 4. **Structured output** - Use JSON/Markdown for easy parsing
 5. **File-based communication** - Save outputs, don't rely on stdout
 
+### Infrastructure Reuse
+1. **ALWAYS check existing scripts first** - Avoid reinventing the wheel
+2. **Leverage proven patterns** - Use `codex-research.sh` for research tasks
+3. **Build upon existing tools** - Extend, don't duplicate functionality
+4. **Example**: For comparative analysis (`compare-analyse`), use existing `codex-research.sh` for parallel research, then add synthesis worker
+5. **Anti-pattern**: Writing duplicate research execution patterns when `codex-research.sh` exists
+
 ### Critical Distinction
 - **Planning tasks (`nnn`)**: Include "DO NOT modify/implement/write files"
 - **Implementation tasks (`gogogo`)**: Allow file modifications
@@ -223,6 +230,7 @@ Advanced launcher with timestamp and tracking support.
 5. ❌ **Reading shell output directly** - Wait for output files
 6. ❌ **Using force flags** - Always use safe operations
 7. ❌ **Nested directory structures** - Keep outputs flat
+8. ❌ **Duplicating existing script functionality** - Always check for `codex-research.sh`, `codex-exec.sh`, etc. before writing new execution patterns
 
 ## Monitoring & Debugging
 
