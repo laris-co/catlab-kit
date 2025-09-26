@@ -1,78 +1,78 @@
 ---
-description: Execute the newest `/cc-nnn` implementation plan with full write permissions, reporting progress step-by-step.
+description: Execute implementation work from an approved plan while tracking progress and preserving git safety.
 ---
 
-The user input to you can be provided directly or as `/cc-gogogo <plan-issue>`; inspect it BEFORE proceeding. If no argument is provided you **must** locate the most recent open implementation plan produced by `/cc-nnn`.
+# cc-gogogo (Execute Implementation)
 
-User input:
+Run the implementation phase by consuming the latest planning issue, validating the workflow, executing the steps in order, and reporting progress back to the plan and repository.
 
-$ARGUMENTS
+## Usage
+```
+/cc-gogogo [--plan <issue-number>] [--branch <name>] [--dry-run]
+```
 
-Goal: Deliver the planned work end-to-end — coding, tests, commits, and PR handoff — while staying faithful to the authored plan. This is Step 3 of the `ccc → nnn → gogogo` workflow.
+## What this command does
 
-Execution privileges: File edits, dependency installs, shell commands, tests, commits, branch pushes, and PR creation are all allowed. Destructive git flags (`--force`) remain prohibited.
+- Validates that a recent `/cc-nnn` plan issue exists and is executable before touching the workspace.
+- Parses the plan's task list into sequential steps, groups optional parallel items, and builds a progress tracker.
+- Prepares the git workspace (status check, branch verification/creation, dependency hooks) with user confirmations for risky actions.
+- Executes each plan step with built-in prompts for file edits, test runs, and verification, updating plan checkboxes and local progress after every step.
+- Handles commits, prepares PR updates, and surfaces blockers while keeping the user in control of writing, staging, or pushing changes.
+- Emits a final summary with completed work, remaining tasks, suggested `/cc-rrr`, and next-step recommendations.
 
-### Preconditions
-- A valid implementation plan issue exists (open, labelled `plan`, authored by `/cc-nnn`).
-- Working tree is clean or intentionally dirty only with changes required for this execution.
-- Required tooling (language runtimes, test frameworks) is available.
+## Key Features
 
-### Execution steps
-1. **Resolve the plan source**
-   - Use `$ARGUMENTS` issue reference if supplied; otherwise select the newest open plan issue.
-   - Abort with guidance (`"No implementation plan found - run /cc-nnn"`) if none qualifies.
+- ✅ Plan-first safety: refuses to run without a valid `/cc-nnn` issue; dry-run preview to confirm readiness.
+- 🔧 Guided execution: structured loop with per-step instructions, git safeguards, and optional automation helpers.
+- 📊 Progress telemetry: real-time tracker, checkbox updates, and clear status outputs for each phase.
 
-2. **Parse the plan**
-   - Extract phases, ordered tasks, acceptance criteria, and risk callouts.
-   - Identify dependencies (sequence vs `[P]` parallel markers) and required files/tests.
-   - Capture referenced branches or environment instructions.
+## Architecture
 
-3. **Prepare workspace**
-   - Checkout or create the indicated feature branch.
-   - Ensure tooling prerequisites from the plan are met (install packages, env setup) while avoiding global destructive changes.
+- Reads plan metadata through `gh issue view` (or cached JSON) to pull phases, acceptance criteria, and linked issues.
+- Uses lightweight parsing to build a normalized step array with attributes (`id`, `description`, `type`, `requires_tests`, `files`).
+- Maintains runtime state in memory (current step index, completion flags, pending follow-ups); persists status notes to `.catlab/workers/` for traceability.
+- Wraps git/gh operations in guard clauses (status clean required unless `--force`, interactive confirmation prior to destructive commands).
+- Integrates with existing scripts (e.g., `codex-exec.sh`) when steps need shell automation or background work.
 
-4. **Execute tasks**
-   - Process tasks in plan order, respecting dependencies and TDD expectations (write/execute tests before implementation when specified).
-   - For each task:
-     1. Describe intent before execution.
-     2. Apply code/documentation changes.
-     3. Run targeted validations (formatters, linters, unit/integration tests).
-     4. If a task fails, halt sequence, capture diagnostics, and report blocking details.
+## Command executed
+```bash
+# Sketch of the execution flow (actual orchestration handled inside Claude Code runtime)
+resolve_plan_issue() {
+  plan_id=$(detect_plan_issue "$1") || return 1
+  plan_payload=$(gh issue view "$plan_id" --json body,title,number,state,labels) || return 2
+  validate_plan_schema "$plan_payload" || return 3
+}
 
-5. **Manage version control**
-   - Stage logically grouped changes per task or phase.
-   - Commit with messages referencing the plan issue (e.g., `fix: implement task 3 (Plan #123)`), summarising what/why.
-   - Maintain clean history; never use force push.
+prepare_workspace() {
+  require_git || return 10
+  git status --short
+  ensure_clean_tree || confirm_or_abort "Working tree dirty; continue?"
+  checkout_or_create_branch "$branch"
+}
 
-6. **Update plan issue**
-   - After each completed task/phase, update checkboxes or progress notes in the plan issue via `gh issue comment` or issue editing.
-   - Capture blockers or deviations explicitly if the plan had to change.
+execute_steps() {
+  build_progress_tracker "$plan_payload"
+  for step in ${steps[@]}; do
+    show_step_intro "$step"
+    confirm_plan_alignment "$step" || abort "Plan needs revision."
+    run_step_actions "$step"              # edits/tests delegated to Claude interactions
+    mark_progress "$step"
+    update_plan_checklist "$plan_id" "$step"
+    suggest_commit_if_ready "$step"
+  done
+}
 
-7. **Create or update pull request**
-   - If no PR exists, create one referencing the plan and context issues; include testing evidence.
-   - If PR already exists, push updates and leave a concise status comment.
+finalize_run() {
+  summarize_results "$plan_id"
+  offer_commit_and_pr_helpers
+  recommend_followup_command "/cc-rrr"
+}
 
-8. **Run final verification**
-   - Execute the full test suite or the subset mandated by the plan.
-   - Perform manual sanity checks when requested (e.g., screenshot, CLI demo) and attach artefacts if possible.
-
-9. **Report completion**
-   - Summarise accomplished tasks, test outcomes, link to commits/PR, and note any follow-up work.
-   - Recommend `/cc-rrr` to document the retrospective or `/cc-ccc` if new context needs capturing.
-
-### Error handling
-- **No plan issue** → Stop with instruction to run `/cc-nnn`.
-- **Plan parsing failure** → Report missing structure; prompt user to correct plan.
-- **Task failure** → Halt, log failing command output, suggest remedial action before retry.
-- **Git issues** → Stop on merge conflicts or dirty tree, surface resolution steps.
-
-### Completion checklist
-- All plan tasks marked complete (or explicitly deferred with rationale).
-- Tests executed with results documented.
-- Commits pushed and PR updated/created with validation notes.
-- Remaining risks, TODOs, or follow-ups captured.
-
-### Follow-on commands
-- `/cc-rrr` for formal retrospective.
-- `/cc-ccc` if additional context capture is required post-implementation.
-- `/cc-nnn` again if plan refresh is needed before next iteration.
+main() {
+  resolve_plan_issue "$PLAN_FLAG" || return
+  prepare_workspace || return
+  execute_steps || return
+  finalize_run
+}
+```
+```
