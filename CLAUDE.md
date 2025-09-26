@@ -111,6 +111,34 @@ codex exec -s danger-full-access "Check tests" &       # → bash_id_3
 # Monitor with BashOutput tool using bash IDs
 ```
 
+### Research Worker Pattern (Web Search)
+```bash
+# Research with web search and full URL references
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+TASK_NAME="research_topic"
+OUTPUT_FILE=".catlab/research/${TIMESTAMP}_PLACEHOLDER_codex_${TASK_NAME}.md"
+
+codex exec -s danger-full-access \
+  -c 'tools.web_search=true' \
+  -c model_reasoning_effort="medium" \
+  "Research [TOPIC]. Create comprehensive report with:
+
+## Research Report: [TOPIC]
+### Executive Summary
+### Key Findings
+### Technical Specifications
+### References & Sources
+**CRITICAL**: Include FULL URLs for all sources:
+- [Source](https://complete-url.com)
+
+**INSTRUCTIONS**:
+1. Replace PLACEHOLDER in '${OUTPUT_FILE}' with process ID
+2. Include complete URLs starting with https://
+3. Prioritize official documentation
+
+Save output to: ${OUTPUT_FILE}"
+```
+
 ## Reasoning Levels & Performance
 
 | Level | Use Case | Execution Time | When to Use |
