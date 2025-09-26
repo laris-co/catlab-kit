@@ -1,121 +1,85 @@
 ---
-description: Capture the current git and conversation state, file a GitHub context issue, then compact the chat.
+description: Capture the current repository and conversation state, file a GitHub context issue, then compact the chat history for clean handoff.
 ---
 
-# Context & Compact (cc-ccc)
+The user input to you can be provided directly (chat message) or as a command argument — you **MUST** inspect it before executing anything. Acceptable flags are `--title "Custom"`, `--labels "comma,separated"`, and `--no-compact`.
 
-Capture an actionable snapshot of the repository and conversation so the next worker can pick up with full context and a compact history.
+User input:
 
-## Usage
-```
-/cc-ccc [--title "Custom context title"] [--labels "context,handoff"] [--no-compact]
-```
+$ARGUMENTS
 
-## What this command does
+Goal: Preserve a high-fidelity snapshot of the working tree and active discussion so the next agent can continue without context loss. This is Step 1 of the `ccc → nnn → gogogo` workflow.
 
-- Inspects the repository to record branch, status, and notable changes.
-- Summarizes the active conversation focus, blockers, and next intentions.
-- Files a structured GitHub context issue with the captured state.
-- Runs Claude Code's `/compact` to trim history unless explicitly skipped.
-- Emits workflow suggestions keyed to the current project state.
+Authority boundaries:
+- Read repository state, conversation history, recent GitHub issues.
+- Write **only** to a newly created GitHub “Context” issue (no local file edits besides temporary artifacts).
+- Invoke `/compact` unless the user explicitly opts out.
 
-## Key Features
+### Preconditions
+- Running inside a git repository.
+- `git` and `gh` binaries available; `gh` must be authenticated for the target repo.
+- Conversation contains enough material to summarise focus, blockers, and next intentions.
 
-- Simple markdown workflow that mirrors existing Claude Code command patterns.
-- GitHub issue payloads stay consistent for easy searching and handoffs.
-- Optional flags let the user override title, labels, or skip compacting.
-- Built-in smart suggestions nudge the next logical command in the chain.
+### Execution steps
+1. **Parse arguments**
+   - Default issue title: `Context: <current-branch> (<YYYY-MM-DD>)`.
+   - Default labels: `context`.
+   - Honour `--title`, `--labels`, `--no-compact` overrides from `$ARGUMENTS`.
 
-## Architecture
+2. **Validate tooling**
+   - Abort with actionable guidance if `git` or `gh` is unavailable or unauthenticated.
+   - Confirm repository cleanliness check is readable (`git status`).
 
-1. Validate required tooling (`git`, `gh`, `/compact`) and offer clear fixes when missing.
-2. Collect git metadata with `git status --porcelain` and `git rev-parse --abbrev-ref HEAD`.
-3. Assemble a temporary markdown body that captures repo state and conversation summary.
-4. Create or append to the context issue via `gh issue create` using consistent labels.
-5. Compact the conversation (unless `--no-compact` given or `/compact` unavailable).
-6. Evaluate project state and surface context-aware next steps:
-   - Dirty git tree -> remind the user why capturing context is timely.
-   - Recent context issue -> suggest `/cc-nnn` to spin up a planning issue.
-   - Otherwise -> confirm readiness to move into planning or implementation.
+3. **Collect repository snapshot**
+   - Record branch name (`git rev-parse --abbrev-ref HEAD`).
+   - Capture `git status --porcelain` and note whether uncommitted changes exist.
+   - Grab the last 5 commits via `git log --oneline -5`.
+   - Detect outstanding PR or issue references from commit messages if present.
 
-## Smart Suggestions
+4. **Summarise conversation**
+   - Extract: current objective, discoveries, blockers, tentative next moves.
+   - Include explicit TODOs or unanswered questions so they are traceable later.
 
-```
-if git_has_uncommitted_changes; then
-  say "Git changes detected-context captured, consider staging or reviewing next."
-elif recent_context_issue_exists; then
-  say "Latest context already filed-run `/cc-nnn` to draft the implementation plan."
-else
-  say "Context saved-ready for planning, handoff, or implementation."
-fi
-```
+5. **Compose context issue body** (markdown skeleton):
+   - `## Session Snapshot`
+     - Branch, git status summary, pending PR/issue refs.
+   - `### Uncommitted Files`
+     - Render code block with `git status` output or `None`.
+   - `### Conversation Focus`
+     - Bullets covering goals, decisions, blockers.
+   - `### Next Intentions`
+     - Ordered list of recommended next tasks.
+   - `### Suggested Commands`
+     - Default suggestions based on workflow detection (see Step 8).
 
-## Command executed
-```bash
-set -euo pipefail
+6. **Create GitHub issue**
+   - Use `gh issue create --title ... --label ... --body-file <temp>`.
+   - If creation fails, preserve the temp file path and return an error describing how to retry manually.
 
-command -v git >/dev/null 2>&1 || {
-  echo "git is required for cc-ccc" >&2
-  exit 1
-}
-command -v gh >/dev/null 2>&1 || {
-  echo "GitHub CLI (gh) is required; run 'gh auth login' first" >&2
-  exit 1
-}
+7. **Compact conversation**
+   - Unless `--no-compact` supplied, run `/compact "Context captured for <branch>"`.
+   - If `/compact` is unavailable, warn but continue.
 
-BRANCH="$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")"
-CHANGES="$(git status --porcelain)"
+8. **Derive smart suggestions**
+   - If git tree is dirty → Suggest staging/reviewing changes before implementation.
+   - If a plan issue already exists → Recommend `/cc-nnn` only if context is stale; otherwise suggest checking open plan.
+   - Otherwise → Encourage running `/cc-nnn` to produce the implementation plan.
 
-CONTEXT_BODY="$(mktemp)"
-{
-  echo "## Session Snapshot"
-  echo "- Branch: ${BRANCH}"
-  echo "- Git changes detected: $([[ -n "$CHANGES" ]] && echo yes || echo no)"
-  echo
-  echo "### Uncommitted files"
-  if [ -n "$CHANGES" ]; then
-    printf '%s\n' "$CHANGES"
-  else
-    echo "None"
-  fi
-  echo
-  echo "### Conversation Focus"
-  echo "<!-- Inject active conversation summary via Claude context helpers -->"
-  echo
-  echo "### Next Intentions"
-  echo "<!-- Capture blockers, decisions, and proposed next steps -->"
-} >"${CONTEXT_BODY}"
+9. **Report results**
+   - Provide issue number/URL, highlight whether compact succeeded, and surface next-command recommendations.
 
-ISSUE_TITLE=${CC_CCC_TITLE:-"Context: ${BRANCH} ($(date +%Y-%m-%d))"}
-ISSUE_LABELS=${CC_CCC_LABELS:-"context"}
+### Error handling
+- **Not a git repo** → Stop immediately with "Run inside a git repository" instruction.
+- **`gh` authentication missing** → Direct user to run `gh auth login`.
+- **Network/GitHub failure** → Preserve issue body temp path and instruct retry.
+- **Insufficient context** → Prompt user for a brief summary before retrying.
 
-if ! gh issue create \
-  --title "${ISSUE_TITLE}" \
-  --body-file "${CONTEXT_BODY}" \
-  --label "${ISSUE_LABELS}"; then
-  echo "Failed to create GitHub context issue; body preserved at ${CONTEXT_BODY}" >&2
-  exit 1
-fi
+### Completion checklist
+- GitHub issue created and number recorded.
+- Conversation compacted or explicit skip acknowledged.
+- Next-step suggestions tailored to repo state included in the response.
 
-if [ -z "${CC_CCC_SKIP_COMPACT:-}" ]; then
-  if command -v /compact >/dev/null 2>&1; then
-    /compact "Context captured for ${BRANCH}"
-  else
-    echo "Skipping compact: /compact command not available" >&2
-  fi
-fi
-
-# Smart suggestion emission happens after inspecting git + GitHub state
-```
-
-## Error handling
-
-- Stops early with actionable guidance when `git` or `gh` are unavailable.
-- Preserves the generated issue body locally if GitHub creation fails (offline mode ready).
-- Skips the compact step gracefully when `/compact` cannot be invoked.
-
-## Safety
-
-- Only reads repository state before writing to GitHub; no direct file modifications.
-- Issue titles and labels are namespaced to avoid collisions with existing workflows.
-- Re-running the command produces new timestamped issues instead of overwriting history.
+### Follow-on commands
+- `/cc-nnn` to convert this context into a plan.
+- `/cc-rrr` when wrapping the overall session.
+- `/cc-gogogo` only after `/cc-nnn` has produced an actionable plan.

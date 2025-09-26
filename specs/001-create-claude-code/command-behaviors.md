@@ -8,228 +8,124 @@
 
 ### cc-ccc (Context & Compact) Behavior
 
-#### Primary Function
-Create GitHub context issue and compact current conversation to prepare for handoff or continuation.
+**Preconditions**
+- Run inside a git repository with `git` and `gh` authenticated
+- Conversation has actionable focus, blockers, and next intentions documented
+- Optional flags: `--title`, `--labels`, `--no-compact`
 
-#### Expected Inputs
-- **Git Repository**: Must be in a git repository
-- **Session State**: Active Claude Code conversation
-- **Optional**: Issue template preferences
+**Execution Steps**
+1. Parse arguments; default to title `Context: <branch> (<YYYY-MM-DD>)` and label `context`.
+2. Capture repo snapshot (`git rev-parse --abbrev-ref HEAD`, `git status --porcelain`, `git log --oneline -5`).
+3. Summarise conversation focus, decisions, blockers, and next steps.
+4. Compose markdown body with sections: Session Snapshot, Uncommitted Files, Conversation Focus, Next Intentions, Suggested Commands.
+5. Create GitHub context issue via `gh issue create ... --body-file <temp>`.
+6. Run `/compact` unless skipped, then emit workflow suggestion.
 
-#### Expected Processing
-1. **Git Status Analysis**:
-   - Run `git status --porcelain` to detect changes
-   - Capture current branch information
-   - Document uncommitted files and their states
+**Outputs**
+- GitHub context issue URL with captured repo + conversation state
+- Compact command status (invoked or skipped)
+- Suggested next command (usually `/cc-nnn`)
 
-2. **Session Context Capture**:
-   - Gather recent conversation highlights
-   - Identify current focus and objectives
-   - Note any pending decisions or blockers
+**Smart Suggestions Logic**
+- Git tree dirty → "Git changes detected - context captured, review or stage next."
+- Recent context already exists → Suggest `/cc-nnn` to move into planning.
+- Clean slate → Confirm readiness for planning or implementation.
 
-3. **GitHub Issue Creation**:
-   - Use `gh issue create` with structured template
-   - Include git status, session state, next steps
-   - Tag appropriately for context filtering
-
-4. **Conversation Compacting**:
-   - Execute Claude Code's `/compact` functionality
-   - Preserve essential context for continuation
-
-#### Expected Outputs
-- **GitHub Issue**: Created with context information
-- **Compact Status**: Confirmation of conversation compacting
-- **Smart Suggestions**: Next recommended workflow steps
-
-#### Smart Suggestions Logic
-```
-IF git has uncommitted changes THEN
-  Suggest: "Git changes detected - good time for context capture"
-ELSIF recent context issue exists THEN
-  Suggest: "Consider `/cc-nnn` to create implementation plan"
-ELSE
-  Suggest: "Context captured - ready for planning or handoff"
-```
-
-#### Expected Error Handling
-- **No Git Repo**: "Must be run in a git repository"
-- **No GitHub Auth**: "GitHub CLI not authenticated - run `gh auth login`"
-- **Network Issues**: "Cannot create issue - working offline"
-
+**Failure Modes**
+- Not a git repo → abort with guidance
+- `gh` unauthenticated → instruct `gh auth login`
+- Network/creation failure → preserve body and surface retry path
+- Insufficient conversation detail → prompt user for summary before retry
 ### cc-nnn (Smart Planning) Behavior
 
-#### Primary Function
-Analyze current context and create detailed implementation plan (analysis only - NO file modifications).
+**Preconditions**
+- Context issue exists (auto-detected or supplied via `#123` argument)
+- Repo accessible with read permissions; working tree may be dirty but will not be modified
+- `gh` authenticated and able to read linked issues
+- Strict ANALYSIS ONLY contract enforced
 
-#### Expected Inputs
-- **Context Source**: Recent context issue OR explicit issue reference (`/cc-nnn #123`)
-- **Git Repository**: For codebase analysis
-- **Project Structure**: To understand architecture
+**Execution Steps**
+1. Resolve context: use argument reference or fetch newest open `context` issue; abort if none found.
+2. Validate repository and tooling availability (fail fast on auth or permission errors).
+3. Ingest context issue body plus referenced artifacts for research.
+4. Inspect codebase read-only (tree scan, dependency map, targeted file reads).
+5. Draft plan sections: Summary/Intent, Research & Insights, Implementation Strategy, Task Breakdown, Testing & Validation, Risks & Mitigations, Next Commands.
+6. Publish `Plan:` GitHub issue with labels (`plan`, component tags) linking back to the context issue.
+7. Emit workflow recommendation (typically `/cc-gogogo`).
 
-#### Expected Processing
-1. **Context Detection**:
-   - IF no issue specified: Find most recent context issue
-   - IF issue specified: Load specified issue content
-   - IF no context found: Error with suggestion to run cc-ccc first
+**Outputs**
+- GitHub plan issue URL
+- Ordered phase overview and risk callouts
+- Reminder that no files were modified
 
-2. **Codebase Analysis**:
-   - Scan relevant files and directories
-   - Identify patterns, frameworks, dependencies
-   - Understand existing architecture and conventions
+**Smart Suggestions Logic**
+- No context found → Prompt `/cc-ccc`
+- Plan created → Suggest `/cc-gogogo`
+- Analysis blocked → Direct to fix permissions or refresh context
 
-3. **Implementation Planning**:
-   - Break down requirements into actionable steps
-   - Consider technical constraints and dependencies
-   - Create detailed task breakdown with file paths
-
-4. **Plan Issue Creation**:
-   - Use `gh issue create` with implementation plan template
-   - Include technical analysis, step-by-step plan, risks
-   - Link to original context issue
-
-#### Expected Outputs
-- **Implementation Plan Issue**: Detailed GitHub issue with plan
-- **Analysis Summary**: Brief overview of approach
-- **Smart Suggestions**: Next steps (usually cc-gogogo)
-
-#### Critical Constraints
-- **NO FILE MODIFICATIONS**: Must be analysis and planning only
-- **NO CODE WRITING**: Cannot implement, only plan
-- **NO DESTRUCTIVE ACTIONS**: Read-only operations only
-
-#### Smart Suggestions Logic
-```
-IF no context issue found THEN
-  Suggest: "Run `/cc-ccc` first to create context"
-ELSIF plan created successfully THEN
-  Suggest: "Use `/cc-gogogo` to execute this plan"
-ELSE
-  Suggest: "Review plan issue and refine if needed"
-```
-
-#### Expected Error Handling
-- **No Context Found**: "No recent context - run `/cc-ccc` first"
-- **Invalid Issue**: "Issue #123 not found or inaccessible"
-- **Analysis Failures**: "Cannot analyze codebase - check file permissions"
-
+**Failure Modes**
+- Missing/invalid context issue
+- `gh` permission errors
+- Repository unreadable (e.g., missing files, analysis command failures)
 ### cc-rrr (Retrospective) Behavior
 
-#### Primary Function
-Generate comprehensive session retrospective with timeline, learnings, and structured documentation.
+**Preconditions**
+- Recent session activity (commits, diffs, or decisions worth documenting)
+- Git history accessible (`git log`, `git diff`)
+- `retrospectives/` directory writable; optional `--issue` argument for linking
 
-#### Expected Inputs
-- **Git History**: Recent commits and file changes
-- **Session Duration**: Start/end times and major events
-- **Work Artifacts**: Files created, issues addressed, PRs made
+**Execution Steps**
+1. Gather session evidence (window/timestamps, `git log main...HEAD`, `git diff --name-only main...HEAD`).
+2. Build retrospective markdown ensuring required sections: Session Summary & Timeline, Technical Details, AI Diary, What Went Well / What Could Improve, Honest Feedback, Lessons Learned, Next Steps, plus Blockers & Resolutions when applicable.
+3. Write timestamped file under `retrospectives/YYYY/MM/` using UTC filename and GMT+7 display time.
+4. Stage and commit the retrospective; if `--issue` provided, comment with link + highlights.
+5. Suggest follow-on commands (usually `/cc-ccc` or `/cc-nnn`).
 
-#### Expected Processing
-1. **Session Data Collection**:
-   - Use `git log --oneline main...HEAD` for commits
-   - Use `git diff --name-only main...HEAD` for file changes
-   - Capture session timeline and major events
+**Outputs**
+- Retrospective file path in repo
+- Commit referencing the retrospective (or staged changes awaiting commit)
+- Optional GitHub comment linking the retrospective
 
-2. **Retrospective Generation**:
-   - Create structured markdown with required sections
-   - Include AI Diary (first-person session narrative)
-   - Include Honest Feedback (frank assessment)
-   - Document lessons learned and next steps
+**Smart Suggestions Logic**
+- High session activity → Encourage immediate documentation to preserve detail
+- Low activity → Offer shorter summary guidance
+- Successful export → Recommend next workflow command
 
-3. **File Export**:
-   - Save to `retrospectives/YYYY/MM/` directory structure
-   - Use timestamp-based filename for uniqueness
-   - Commit retrospective file to repository
-
-4. **GitHub Integration**:
-   - Comment on relevant issues/PRs with retrospective link
-   - Update related GitHub artifacts
-
-#### Expected Outputs
-- **Retrospective File**: Structured markdown in retrospectives/ directory
-- **Git Commit**: Retrospective committed to repository
-- **GitHub Comments**: Links added to relevant issues/PRs
-
-#### Required Sections (MUST include all)
-- Session Summary and Timeline
-- Technical Details (files modified, decisions made)
-- **AI Diary** (first-person narrative - MANDATORY)
-- What Went Well / What Could Improve
-- **Honest Feedback** (frank assessment - MANDATORY)
-- Lessons Learned
-- Next Steps
-
-#### Smart Suggestions Logic
-```
-IF meaningful session activity detected THEN
-  Suggest: "Good time to document learnings"
-ELSIF no significant changes THEN
-  Suggest: "Limited activity - consider shorter summary"
-ELSE
-  Suggest: "Retrospective created - ready for next session"
-```
-
-#### Expected Error Handling
-- **No Git History**: "No recent changes to retrospect on"
-- **File Permission Issues**: "Cannot write to retrospectives/ directory"
-- **Missing Required Sections**: Warning about incomplete retrospective
-
+**Failure Modes**
+- No meaningful changes detected → Abort with instruction to run after implementation
+- Cannot write to `retrospectives/` → Surface permission/directory fix
+- Mandatory sections incomplete → Block finalisation until filled
 ### cc-gogogo (Execute Implementation) Behavior
 
-#### Primary Function
-Execute the most recent implementation plan step-by-step with file modifications allowed.
+**Preconditions**
+- Most recent `/cc-nnn` plan issue exists and is accessible
+- Working tree ready for modification (clean or intentionally staged for execution)
+- Tooling/runtime dependencies installed as per plan
 
-#### Expected Inputs
-- **Implementation Plan**: Most recent plan issue from cc-nnn
-- **Git Repository**: For making changes and commits
-- **File System**: Write access for implementation
+**Execution Steps**
+1. Resolve plan source (argument or newest open plan issue) and validate structure (phases, tasks, acceptance criteria, `[P]` markers).
+2. Prepare workspace: checkout/create branch, install dependencies, configure environment.
+3. Execute tasks in plan order, respecting dependencies and TDD expectations; run validations (tests, linters) per task.
+4. Group changes into logical commits referencing plan issue; avoid force pushes and preserve reviewable history.
+5. Update plan issue progress (checkboxes/comments), create or update PR with testing evidence, and record blockers/deviations.
+6. Run final verification suite and summarise outcomes for the user, recommending `/cc-rrr`.
 
-#### Expected Processing
-1. **Plan Detection**:
-   - Find most recent implementation plan issue
-   - Parse plan structure and extract actionable steps
-   - Validate plan completeness and feasibility
+**Outputs**
+- Code/documentation changes in repo
+- Commits (and optional PR) referencing the plan issue
+- Updated plan issue status
+- Test/verification results reported back to the user
 
-2. **Step-by-Step Execution**:
-   - Execute each plan step in dependency order
-   - Allow file modifications, code writing, system changes
-   - Provide progress updates and confirmations
+**Smart Suggestions Logic**
+- Missing plan → Prompt `/cc-nnn`
+- Successful run → Suggest `/cc-rrr`
+- Failure mid-step → Highlight failing step and recommend remediation before retry
 
-3. **Change Management**:
-   - Commit logical groups of changes
-   - Use descriptive commit messages referencing plan
-   - Create or update feature branch as needed
-
-4. **Completion Tracking**:
-   - Mark completed steps in plan issue
-   - Update GitHub issue with progress
-   - Provide final summary of changes made
-
-#### Expected Outputs
-- **File Modifications**: Code changes as specified in plan
-- **Git Commits**: Logical commits with clear messages
-- **GitHub Updates**: Plan issue updated with progress
-- **Summary Report**: Overview of implemented changes
-
-#### Execution Permissions
-- **FILE MODIFICATIONS ALLOWED**: Can write, edit, delete files
-- **GIT OPERATIONS ALLOWED**: Can commit, branch, merge
-- **SYSTEM OPERATIONS ALLOWED**: Can run build, test, install commands
-
-#### Smart Suggestions Logic
-```
-IF no recent plan found THEN
-  Suggest: "Run `/cc-nnn` first to create implementation plan"
-ELSIF plan execution successful THEN
-  Suggest: "Use `/cc-rrr` to document this session"
-ELSIF execution failed THEN
-  Suggest: "Review errors and consider `/cc-nnn` to replan"
-```
-
-#### Expected Error Handling
-- **No Plan Found**: "No recent implementation plan - run `/cc-nnn` first"
-- **Plan Parse Errors**: "Cannot parse plan format - check plan structure"
-- **Execution Failures**: "Step X failed: [specific error] - suggest fixes"
-- **Permission Errors**: "Cannot modify files - check permissions"
-
+**Failure Modes**
+- Plan not found or unreadable
+- Task execution failure (tests, builds)
+- Git conflicts or permission errors during commits/pushes
+- Environment setup gaps (missing dependencies)
 ## Smart Workflow Suggestions System
 
 ### Context Detection Logic

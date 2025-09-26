@@ -1,69 +1,78 @@
 ---
-description: Analyse context and draft implementation plan issues without touching the working tree.
+description: Analyse captured context and publish a GitHub implementation plan without modifying the working tree.
 ---
 
-# Smart Planning Command (cc-nnn)
+The user input to you can be provided directly or via `/cc-nnn <issue-ref>`; you **MUST** inspect it before acting. Accept `#123` or full URLs to target a specific context issue. No other flags are supported.
 
-Run a read-only planning workflow that turns recent project context into a GitHub implementation plan while respecting the strict **ANALYSIS ONLY** contract.
+User input:
 
-## Usage
-```
-/cc-nnn
-/cc-nnn #123
-```
+$ARGUMENTS
 
-## What this command does
+Goal: Transform the latest context into a detailed execution plan while honouring the **analysis-only** contract. This is Step 2 of the `ccc → nnn → gogogo` pattern.
 
-- Detects the active context by preferring an explicit issue reference, otherwise finds the most recent context issue.
-- Performs repository reconnaissance (git status, tree scanning, dependency inspection) strictly in read-only mode.
-- Synthesises a step-by-step implementation blueprint that maps requirements to files, modules, and tests.
-- Creates or updates a GitHub planning issue via `gh issue create` linking back to the originating context.
-- Surfaces smart next-step suggestions (typically `/cc-gogogo`) once the plan is ready.
+Hard constraints:
+- Absolutely **no** file writes, staging, commits, or destructive operations.
+- Operate in read-only mode; shell commands should inspect only.
+- Output must be a GitHub "Plan" issue plus an in-chat summary.
 
-## Key Features
+### Preconditions
+- Fresh `ccc` issue exists (either detected automatically or supplied via argument).
+- Running inside a git repo with `git` and `gh` available.
+- Sufficient project artifacts (README, specs, existing code) accessible for analysis.
 
-- ✅ Context-aware: auto-locates recent context or validates an explicit issue.
-- 🧭 Deep analysis: inspects code structure, tooling, and contracts without modifying files.
-- 🧱 Plan scaffolding: outputs actionable task breakdowns with risks, dependencies, and verification steps.
-- 📎 GitHub native: leverages `gh` CLI for plan issue creation and cross-linking.
-- 🚫 DO NOT modify/implement/write files — this command must remain analysis-only.
+### Execution steps
+1. **Resolve context source**
+   - If `$ARGUMENTS` provided, parse the referenced issue ID/URL.
+   - Otherwise fetch the most recent open context issue labeled `context` (using `gh issue list`).
+   - If none found → stop and instruct user to run `/cc-ccc` first.
 
-## Architecture
+2. **Validate environment**
+   - Confirm `gh` authentication and repository access for the context issue.
+   - Abort if repository contains unmerged migrations or partially applied patches that would invalidate analysis.
 
-- **Context detection**: `gh issue list` / `gh issue view` combined with local cache of recent commands to identify the driving issue; aborts with `"No recent context - run /cc-ccc first"` when none are found.
-- **Project inspection**: read-only commands (`git status --short`, `rg --files`, `ls`, language-aware tooling) to understand current architecture, dependencies, and potential change surfaces.
-- **Planning engine**: synthesises goals, risks, and task ordering from context issue details and repository findings; prepares structured sections (Overview → Tasks → Risks → Validation).
-- **Issue publishing**: composes markdown and executes `gh issue create --title ... --body ... --label plan` linking back to the originating context issue.
-- **Suggestion system**: evaluates workflow state (context located? plan issued?) to recommend `/cc-gogogo` or remediation commands.
-- **Guard rails**: before any step, asserts `ANALYSIS_ONLY=true`; any attempt to write files or run destructive commands produces a hard stop with `"Cannot analyze codebase - check file permissions"` style messaging.
+3. **Ingest context**
+   - Read the context issue body: extract goals, blockers, relevant PRs, outstanding decisions.
+   - Pull in supporting artifacts mentioned in the issue (spec docs, retro notes, etc.).
 
-## Command executed
-```bash
-cc-nnn() {
-  ensure_git_repo_or_exit
-  ensure_analysis_only_mode  # hard fail if modification attempt detected
+4. **Survey codebase (read-only)**
+   - Use `git status --short`, `rg --files`, targeted file reads, and dependency inspection to understand current architecture.
+   - Map affected modules, tests, configs, and external integrations.
 
-  issue_ref=$(resolve_context_issue "$1") || error "No recent context - run /cc-ccc first"
-  validate_issue_access "$issue_ref" || error "Issue $issue_ref not found or inaccessible"
+5. **Develop the plan structure**
+   - Core sections to populate:
+     1. **Summary / Intent** – restate the problem using context wording.
+     2. **Research & Insights** – key findings from code and docs.
+     3. **Implementation Strategy** – ordered phases with rationale.
+     4. **Task Breakdown** – bullet list with file paths and owners (if known).
+     5. **Testing & Validation** – unit/integration/manual checks required.
+     6. **Risks & Mitigations** – call out uncertainty, prerequisites, rollbacks.
+     7. **Next Commands** – usually `/cc-gogogo`; include `/cc-rrr` if session closure likely.
 
-  capture_project_state            # git status, repo metadata, dependency graphs
-  perform_read_only_code_analysis  # static inspection only; no edits allowed
-  plan_payload=$(draft_plan_markdown "$issue_ref" "$project_state") || \
-    error "Cannot analyze codebase - check file permissions"
+6. **Publish GitHub plan issue**
+   - Use consistent naming like `Plan: <user story>`.
+   - Apply labels: `plan`, plus any component labels derived from context.
+   - Cross-link back to the context issue using `gh issue create --body-file` with references.
+   - If issue creation fails, report error and preserve draft plan content for manual posting.
 
-  gh issue create --title "Plan: ${issue_ref}" --body "$plan_payload" --label plan
-  suggest_next_step "/cc-gogogo" "Plan created from ${issue_ref}"
-}
-```
+7. **Emit workflow guidance**
+   - Default suggestion: `/cc-gogogo` referencing new issue number.
+   - If blockers remain unsolved, recommend follow-up research or `clarify` style questioning before implementation.
 
-## Error Handling
+8. **Summarise for the user**
+   - Provide plan issue number/URL, high-level phases, and explicit reminder that no files were modified.
 
-- **No Context Found** → `"No recent context - run /cc-ccc first"`
-- **Invalid Issue** → `"Issue #123 not found or inaccessible"`
-- **Analysis Failures** → `"Cannot analyze codebase - check file permissions"`
+### Error handling
+- **No context found** → Respond with "Run `/cc-ccc` to capture context first." Do not attempt to fabricate context.
+- **Invalid issue reference** → Explain the issue was not accessible and request a different ID.
+- **Analysis failure** (e.g., repository unreadable) → Fail fast with diagnostic suggestion (permissions, branch mismatch).
 
-## Smart Suggestions
+### Completion checklist
+- Plan issue created and linked to context issue.
+- Chat summary includes ordered implementation phases and risk callouts.
+- Next-step command recommendation provided.
+- Confirmation that working tree remains unchanged.
 
-- After successful planning, recommend running `/cc-gogogo` to execute the plan.
-- If context is missing, prompt the user to run `/cc-ccc` to establish it.
-- When analysis cannot proceed, direct the user to inspect repository permissions or rerun with correct context.
+### Follow-on commands
+- `/cc-gogogo` to execute the plan.
+- `/cc-ccc` if significant new information emerges before implementation.
+- `/cc-rrr` once execution completes to document outcomes.

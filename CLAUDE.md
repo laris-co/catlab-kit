@@ -83,6 +83,21 @@ Example: `20250926_153721_c1282f_readme_analysis.md`
 }
 ```
 
+## Spec-Kit Command Alignment
+
+| Short Code | Purpose | Spec Kit Analogue |
+|------------|---------|-------------------|
+| `cc-ccc` | Capture repository + conversation context, file GitHub handoff issue, optionally compact history | Pre-`/clarify` context capture issue |
+| `cc-nnn` | Read-only analysis that publishes implementation plans | `/plan` (analysis + plan generation) |
+| `cc-gogogo` | Execute the open implementation plan with full write permissions | `/implement` (task execution) |
+| `cc-rrr` | Archive session retrospectives with AI Diary + Honest Feedback | Spec-driven post-implementation retrospective rituals |
+
+### Workflow Guardrails
+- Run `cc-ccc` to seed context before planning, mirroring spec-kit's expectation that `/clarify` follows a current spec.
+- Invoke `cc-nnn` only after context exists; it behaves like `/plan` and refuses to modify files.
+- Use `cc-gogogo` exclusively against the newest `/cc-nnn` plan; treat plan issue state as the single source of truth.
+- Close the loop with `cc-rrr`, ensuring lessons learned roll back into `CLAUDE.md` just like spec-kit retrospectives inform future specs.
+
 ## Implementation Patterns
 
 ### Single Worker Pattern

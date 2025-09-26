@@ -22,57 +22,48 @@ Following the user's directive "we still going simple way":
 ## Command Implementations
 
 ### cc-ccc (Context & Compact)
-```markdown
----
-description: Create context issue and compact conversation
----
-
-## What this command does
-- Check git status for current changes
-- Create GitHub context issue with session state
-- Run conversation compacting
-- Provide next workflow suggestions
-```
+- **Preconditions**: Git repo available; `git` and `gh` authenticated; conversational context ready to summarise; optional flags `--title`, `--labels`, `--no-compact`.
+- **Execution Steps**:
+  1. Parse arguments and establish defaults (title = `Context: <branch> (<YYYY-MM-DD>)`, label = `context`).
+  2. Collect repo snapshot (`git status --porcelain`, `git rev-parse --abbrev-ref HEAD`, `git log -5`).
+  3. Summarise conversation focus, blockers, and next intentions.
+  4. Publish GitHub context issue with structured markdown sections (Session Snapshot, Uncommitted Files, Conversation Focus, Next Intentions, Suggested Commands).
+  5. Invoke `/compact` unless skipped, then emit smart follow-up suggestions.
+- **Outputs**: Context issue URL, compact status, recommended next command.
+- **Failure Modes**: Missing git repo, unauthenticated `gh`, network/write failure (issue body saved for retry).
 
 ### cc-nnn (Next/Planning)
-```markdown
----
-description: Smart planning workflow - analysis only
----
-
-## What this command does
-- Check for recent context issue or analyze current state
-- Perform codebase analysis and research
-- Create GitHub implementation plan issue
-- **CRITICAL**: NO file modifications - planning only
-```
+- **Preconditions**: Context issue exists (auto-detected or provided via `#123` argument); repo readable; analysis-only contract enforced.
+- **Execution Steps**:
+  1. Resolve context source via argument or latest open `context` issue.
+  2. Pull context body plus referenced artifacts for research.
+  3. Inspect codebase read-only (tree scan, dependency review, targeted file reads).
+  4. Draft plan sections (Summary, Research & Insights, Implementation Strategy, Task Breakdown, Testing & Validation, Risks & Mitigations, Next Commands).
+  5. Publish `Plan:` GitHub issue with labels (`plan`, components) and link back to context.
+- **Outputs**: Plan issue URL, ordered phases, recommendation to run `/cc-gogogo`.
+- **Failure Modes**: No context found, invalid issue reference, repository unreadable.
 
 ### cc-rrr (Retrospective)
-```markdown
----
-description: Create detailed session retrospective
----
-
-## What this command does
-- Collect session timeline and git changes
-- Generate structured retrospective with required sections
-- Export to retrospectives/ directory
-- Link to relevant GitHub issues/PRs
-```
+- **Preconditions**: Session produced meaningful work (commits/diffs); repo history accessible; `retrospectives/` writable; optional `--issue` argument.
+- **Execution Steps**:
+  1. Gather evidence (session window, `git log main...HEAD`, `git diff --name-only`).
+  2. Populate mandatory sections (Session Summary & Timeline, Technical Details, AI Diary, What Went Well / Could Improve, Honest Feedback, Lessons Learned, Next Steps, Blockers/Resolutions if relevant).
+  3. Write timestamped file under `retrospectives/YYYY/MM/` (UTC filename, GMT+7 display times).
+  4. Stage & commit retrospective; optionally comment on linked issue with path + highlights.
+  5. Suggest follow-on commands (often `/cc-ccc` or `/cc-nnn`).
+- **Outputs**: Retrospective file path, commit reference, optional GitHub comment.
+- **Failure Modes**: No activity detected, write permissions missing, mandatory sections incomplete.
 
 ### cc-gogogo (Execute Implementation)
-```markdown
----
-description: Execute most recent implementation plan
----
-
-## What this command does
-- Find most recent plan issue from cc-nnn
-- Execute implementation step-by-step
-- Allow file modifications and code changes
-- Create commits and PRs as needed
-```
-
+- **Preconditions**: Latest `/cc-nnn` plan issue exists and is open; tooling installed; working tree ready for changes.
+- **Execution Steps**:
+  1. Resolve plan issue (argument or newest open plan) and parse phases, dependencies, acceptance criteria.
+  2. Prepare workspace (branch checkout/creation, dependency setup) per plan instructions.
+  3. Execute tasks sequentially (respect `[P]` markers for parallel opportunities) with TDD emphasis and per-step validation.
+  4. Group and commit changes referencing plan issue, updating plan checkboxes/progress after each step.
+  5. Create or update PR, attach testing evidence, surface blockers or deviations, and run final verification.
+- **Outputs**: Commit range, PR link, updated plan status, recommended `cc-rrr` follow-up.
+- **Failure Modes**: Missing plan issue, plan schema unreadable, task execution error (halt + diagnostics), git conflicts.
 ## Smart Workflow Suggestions
 
 Each command analyzes current project state to suggest next steps:
