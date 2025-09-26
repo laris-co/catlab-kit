@@ -1,11 +1,11 @@
 # PocketBase Research Report — September 26, 2025
 
 ## Executive Summary
-- PocketBase v0.30.0 shipped on September 7, 2025, adding stricter S3 request path escaping, a Lark OAuth2 provider, new JSVM `os.Root` bindings, and raising the minimum Go toolchain to 1.24.0 alongside UI refinements. citeturn3view0
-- The official documentation continues to stress PocketBase’s pre-1.0 status while distributing fresh v0.30.0 binaries for all major platforms, reinforcing the need to monitor changelog-driven updates. citeturn1search0
-- Rapid v0.29.x cadence delivered Apple OAuth2 data improvements, extended JSVM bindings, additional OAuth providers, and operational fixes between July and August 2025, signaling ongoing platform hardening. citeturn3view0
-- The 0.22.x long-term stream remains maintained via backports such as v0.22.35, sustaining production users who defer the v0.23+ breaking changes. citeturn3view0
-- Community distribution channels (AUR and PyPI `pocketbase-bin`) simultaneously published v0.30.0 artifacts on September 7, 2025, enabling streamlined installation across Linux distros, Python environments, and CI pipelines. citeturn1search1turn5search0
+- PocketBase v0.30.0 shipped on September 7, 2025, adding stricter S3 request path escaping, a Lark OAuth2 provider, new JSVM `os.Root` bindings, and raising the minimum Go toolchain to 1.24.0 alongside UI refinements. ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
+- The official documentation continues to stress PocketBase’s pre-1.0 status while distributing fresh v0.30.0 binaries for all major platforms, reinforcing the need to monitor changelog-driven updates. ([PocketBase Documentation](https://pocketbase.io/docs/))
+- Rapid v0.29.x cadence delivered Apple OAuth2 data improvements, extended JSVM bindings, additional OAuth providers, and operational fixes between July and August 2025, signaling ongoing platform hardening. ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
+- The 0.22.x long-term stream remains maintained via backports such as v0.22.35, sustaining production users who defer the v0.23+ breaking changes. ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
+- Community distribution channels (AUR and PyPI `pocketbase-bin`) simultaneously published v0.30.0 artifacts on September 7, 2025, enabling streamlined installation across Linux distros, Python environments, and CI pipelines. ([AUR package: pocketbase-bin](https://aur.archlinux.org/packages/pocketbase-bin), [PyPI distribution: pocketbase-bin](https://pypi.org/project/pocketbase-bin/))
 
 ## Current Release Timeline
 | Version | Release Date (UTC) | Highlights |
@@ -18,36 +18,36 @@
 | v0.28.4 | 2025-06-21 | JSVM `toBytes()` helper, regex randomization fix, documentation touch-ups |
 | v0.22.35 | 2025-08-09 | Backported Go 1.23.12 runtime improvements to the v0.22 LTS branch |
 
-Source: GitHub Releases. citeturn3view0
+Source: GitHub Releases. ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
 
 ## Feature Highlights
 ### v0.30.0 Focus Areas
-- **Object storage hardening:** Escaping S3 request paths now mirrors signature rules to prevent subtle mismatches when objects contain special characters. citeturn3view0
-- **Auth integrations:** New Lark OAuth2 provider expands enterprise single sign-on coverage; test token expiration handling was relaxed to stabilize reproducible builds. citeturn3view0
-- **Server scripting ergonomics:** Fresh JSVM `os.Root` bindings let hooks interact with the filesystem root more safely, while `osutils.IsProbablyGoRun()` improves diagnostics in dev workflows. citeturn3view0
-- **Operational prerequisites:** Projects embedding the Go package must adopt Go 1.24.0+, and admins gain quality-of-life UI updates (seconds in date picker, clearer index tooling). citeturn3view0
+- **Object storage hardening:** Escaping S3 request paths now mirrors signature rules to prevent subtle mismatches when objects contain special characters. ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
+- **Auth integrations:** New Lark OAuth2 provider expands enterprise single sign-on coverage; test token expiration handling was relaxed to stabilize reproducible builds. ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
+- **Server scripting ergonomics:** Fresh JSVM `os.Root` bindings let hooks interact with the filesystem root more safely, while `osutils.IsProbablyGoRun()` improves diagnostics in dev workflows. ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
+- **Operational prerequisites:** Projects embedding the Go package must adopt Go 1.24.0+, and admins gain quality-of-life UI updates (seconds in date picker, clearer index tooling). ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
 
 ### v0.29.x Stream Themes
-- **OAuth coverage:** Added Box.com support (v0.29.1) and improved Apple OAuth2 payload propagation (v0.29.3), reducing manual user provisioning friction. citeturn3view0
-- **Runtime stability:** Recompiled against SQLite 3.50.3, tightened rate limiter telemetry, and patched WASM build quirks to aid alternative deployment targets. citeturn3view0
-- **Extensibility tooling:** Registered missing JSVM migration bindings and refreshed generated types to keep custom migrations aligned with core APIs. citeturn3view0
+- **OAuth coverage:** Added Box.com support (v0.29.1) and improved Apple OAuth2 payload propagation (v0.29.3), reducing manual user provisioning friction. ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
+- **Runtime stability:** Recompiled against SQLite 3.50.3, tightened rate limiter telemetry, and patched WASM build quirks to aid alternative deployment targets. ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
+- **Extensibility tooling:** Registered missing JSVM migration bindings and refreshed generated types to keep custom migrations aligned with core APIs. ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
 
 ### Sustained v0.22.x Support
-- Backports such as v0.22.35 continue to propagate runtime improvements without adopting the broad API changes introduced in v0.23+, offering a conservative path for production workloads. citeturn3view0
+- Backports such as v0.22.35 continue to propagate runtime improvements without adopting the broad API changes introduced in v0.23+, offering a conservative path for production workloads. ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
 
 ## Platform Overview
-PocketBase ships as a single-file backend combining SQLite persistence, real-time subscriptions, built-in auth management, admin UI, and REST-ish APIs. It can operate as a standalone binary or be embedded as a Go framework, with autogenerated `pb_data` and `pb_migrations` directories to manage datasets and schema evolution. citeturn1search0
+PocketBase ships as a single-file backend combining SQLite persistence, real-time subscriptions, built-in auth management, admin UI, and REST-ish APIs. It can operate as a standalone binary or be embedded as a Go framework, with autogenerated `pb_data` and `pb_migrations` directories to manage datasets and schema evolution. ([PocketBase Documentation](https://pocketbase.io/docs/))
 
 ## Upgrade & Migration Guidance
-- **Breaking changes at v0.23:** Official Go and JSVM upgrade guides detail the removal of the legacy `Dao` layer, router syntax changes, new cron scheduler, and migration API adjustments. Teams are urged to stage upgrades, refactor hooks/migrations, and pin SDK versions if remaining on 0.22.x. citeturn4search0turn4search1
-- **Operational playbook:** Recommended steps include full `pb_data` backups, temporarily disabling migrations during code refactors, and regenerating collection snapshots post-upgrade (`migrate collections`, `history-sync`). citeturn4search0turn4search1
-- **Managed hosting considerations:** PocketHost advises testing upgrades on cloned instances, locking semver ranges (e.g., `~0.30.0`), and avoiding unsupported downgrades to prevent schema drift in hosted environments. citeturn4search3
+- **Breaking changes at v0.23:** Official Go and JSVM upgrade guides detail the removal of the legacy `Dao` layer, router syntax changes, new cron scheduler, and migration API adjustments. Teams are urged to stage upgrades, refactor hooks/migrations, and pin SDK versions if remaining on 0.22.x. ([PocketBase Changelog](https://github.com/pocketbase/pocketbase/blob/master/CHANGELOG.md), [PocketBase Migration Guidance](https://pocketbase.io/docs/go-migrations/))
+- **Operational playbook:** Recommended steps include full `pb_data` backups, temporarily disabling migrations during code refactors, and regenerating collection snapshots post-upgrade (`migrate collections`, `history-sync`). ([PocketBase Changelog](https://github.com/pocketbase/pocketbase/blob/master/CHANGELOG.md), [PocketBase Migration Guidance](https://pocketbase.io/docs/go-migrations/))
+- **Managed hosting considerations:** PocketHost advises testing upgrades on cloned instances, locking semver ranges (e.g., `~0.30.0`), and avoiding unsupported downgrades to prevent schema drift in hosted environments. ([PocketHost Operations Guide](https://pockethost.io/docs))
 
 ## Distribution & Tooling Landscape
-- **Official binaries:** Download links for Linux, macOS, and Windows (x64/ARM64) remain centralized in the docs, simplifying direct installs or container bundling. citeturn1search0
-- **Operating system packages:** The Arch User Repository (`pocketbase-bin`) updated to v0.30.0 on September 7, 2025, providing a managed system package for rolling-release users. citeturn1search1
-- **Python ecosystem:** The `pocketbase-bin` PyPI distribution published synchronized wheels/tarballs for v0.30.0 across desktop, server, and Android targets, enabling scripted installs in CI/CD and multi-arch environments. citeturn5search0
-- **CLI maintenance:** Users can invoke `./pocketbase update` (introduced earlier; reiterated in release notes) to fetch newer binaries directly, streamlining version hygiene. citeturn3view0
+- **Official binaries:** Download links for Linux, macOS, and Windows (x64/ARM64) remain centralized in the docs, simplifying direct installs or container bundling. ([PocketBase Documentation](https://pocketbase.io/docs/))
+- **Operating system packages:** The Arch User Repository (`pocketbase-bin`) updated to v0.30.0 on September 7, 2025, providing a managed system package for rolling-release users. ([AUR package: pocketbase-bin](https://aur.archlinux.org/packages/pocketbase-bin))
+- **Python ecosystem:** The `pocketbase-bin` PyPI distribution published synchronized wheels/tarballs for v0.30.0 across desktop, server, and Android targets, enabling scripted installs in CI/CD and multi-arch environments. ([PyPI distribution: pocketbase-bin](https://pypi.org/project/pocketbase-bin/))
+- **CLI maintenance:** Users can invoke `./pocketbase update` (introduced earlier; reiterated in release notes) to fetch newer binaries directly, streamlining version hygiene. ([PocketBase v0.30.0 Release Notes](https://github.com/pocketbase/pocketbase/releases/tag/v0.30.0))
 
 ## Action Items for Teams
 1. Evaluate Go 1.24 readiness and adjust CI toolchains before adopting v0.30.0.
