@@ -4,7 +4,7 @@
       "bash_id": "c1282f",
       "timestamp": "20250926_153738",
       "task": "readme_analysis",
-      "expected_output": "codex-outputs/20250926_153738_c1282f_readme_analysis.md",
+      "expected_output": ".catlab/workers/20250926_153738_c1282f_readme_analysis.md",
       "status": "running"
     }
   ],

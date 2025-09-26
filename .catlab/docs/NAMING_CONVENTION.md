@@ -11,7 +11,7 @@
 - `20250926_153415_def456_analysis.md`
 
 ## Benefits
-- **Flat structure**: All files in one directory (easy to find)
+- **Organized structure**: Files organized in `.catlab/workers/` directory
 - **Chronological sorting**: Files naturally sort by creation time
 - **Bash ID reference**: Direct link between process and output
 - **Descriptive names**: Clear indication of content
@@ -29,5 +29,5 @@ When launching a worker:
 ```bash
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 # After getting bash_id from background execution
-OUTPUT_FILE="codex-outputs/${TIMESTAMP}_${BASH_ID}_description.ext"
+OUTPUT_FILE=".catlab/workers/${TIMESTAMP}_${BASH_ID}_description.ext"
 ```

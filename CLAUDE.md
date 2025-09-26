@@ -16,7 +16,7 @@ TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 TASK_NAME="your_task_description"
 
 # 2. Define output file with bash ID placeholder
-OUTPUT_FILE="codex-outputs/${TIMESTAMP}_BASHID_${TASK_NAME}.md"
+OUTPUT_FILE=".catlab/workers/${TIMESTAMP}_BASHID_${TASK_NAME}.md"
 
 # 3. Execute in background (returns bash_id for tracking)
 codex exec -s danger-full-access \
@@ -54,11 +54,14 @@ codex exec -s danger-full-access \
 
 ### Directory Structure
 ```
-codex-outputs/                       # Flat structure (no nesting)
-├── NAMING_CONVENTION.md             # Naming guide
-├── WORKFLOW_SUMMARY.md              # Workflow documentation
-├── worker_registry.json             # Bash ID → output mapping
-└── {timestamp}_{bash_id}_{task}.ext # Output files
+.catlab/                             # Hidden directory for catlab outputs
+├── docs/                           # Documentation files
+│   ├── NAMING_CONVENTION.md        # Naming guide
+│   └── WORKFLOW_SUMMARY.md         # Workflow documentation
+├── workers/                        # Worker outputs and registry
+│   ├── worker_registry.json        # Bash ID → output mapping
+│   └── {timestamp}_{bash_id}_{task}.ext # Output files
+└── researchs/                      # Research outputs (existing)
 ```
 
 ### Naming Pattern
@@ -74,7 +77,7 @@ Example: `20250926_153721_c1282f_readme_analysis.md`
     "bash_id": "c1282f",
     "timestamp": "20250926_153738",
     "task": "readme_analysis",
-    "output_file": "codex-outputs/20250926_153738_c1282f_readme_analysis.md",
+    "output_file": ".catlab/workers/20250926_153738_c1282f_readme_analysis.md",
     "status": "running"
   }]
 }
@@ -204,7 +207,7 @@ ps aux | grep codex
 Use `BashOutput` tool with bash_id to check progress without reading stdout.
 
 ### Worker Registry
-Check `codex-outputs/worker_registry.json` for active workers and their outputs.
+Check `.catlab/workers/worker_registry.json` for active workers and their outputs.
 
 ## Security Considerations
 

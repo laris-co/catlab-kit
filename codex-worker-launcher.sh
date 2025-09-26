@@ -13,7 +13,7 @@ fi
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
 # Output will be saved with this prefix
-OUTPUT_PREFIX="codex-outputs/${TIMESTAMP}"
+OUTPUT_PREFIX=".catlab/workers/${TIMESTAMP}"
 
 echo "🚀 Launching Codex Worker"
 echo "Timestamp: ${TIMESTAMP}"
