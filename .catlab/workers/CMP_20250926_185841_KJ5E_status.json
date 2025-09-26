@@ -1,0 +1,15 @@
+{
+  "reference_id": "CMP_20250926_185841_KJ5E",
+  "status": "RESEARCHING",
+  "message": "Running codex-research workers",
+  "timestamp": "2025-09-26T18:58:41+0700",
+  "pid": 4090644,
+  "mode": "fg",
+  "topic": "TestA vs TestB",
+  "items": {
+    "item_a": "TestA",
+    "item_b": "TestB"
+  },
+  "output_file": ".catlab/research/20250926_185841_CMP_20250926_185841_KJ5E_codex_comparison_testa_vs_testb.md",
+  "log_file": ".catlab/logs/CMP_20250926_185841_KJ5E.log"
+}
