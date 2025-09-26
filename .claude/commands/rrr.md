@@ -1,49 +1,48 @@
-# Research Command (rrr)
+# Retrospective Command (rrr)
 
-Execute a Codex research task with web search and structured output.
+Create a detailed session retrospective following CLAUDE.md workflow.
 
 ## Usage
 ```
-rrr "research topic"
+rrr
+rrr "additional session notes"
 ```
 
 ## Example
 ```
-rrr "Next.js 15 performance improvements"
-rrr "Comparison between PostgreSQL and MySQL for web apps"
+rrr
+rrr "Completed authentication system, found JWT issues"
 ```
 
 ## What this command does
 
-I will launch a Codex worker with web search enabled to research your topic and create a comprehensive markdown report with:
+I will create a comprehensive session retrospective following the CLAUDE.md template:
 
-- **Executive Summary**: Brief overview
-- **Key Findings**: Main discoveries
-- **Technical Specifications**: Versions, requirements, etc.
-- **References & Sources**: **CRITICAL** - Full URLs for all sources
-- **Conclusion**: Summary and recommendations
+1. **Gather Session Data**: `git diff --name-only main...HEAD`, `git log --oneline main...HEAD`, session timestamps
+2. **Create Retrospective Document**: Markdown file in `retrospectives/` with ALL required sections
+3. **Validate Completeness**: Ensure AI Diary and Honest Feedback sections are complete
+4. **Update CLAUDE.md**: Copy new lessons learned
+5. **Link to GitHub**: Commit retrospective and comment on relevant issue/PR
 
-The output will be saved to `.catlab/research/` with proper naming:
-`YYYYMMDD_HHMMSS_ProcessID_codex_topic.md`
+## Retrospective Structure
+
+The retrospective will include:
+
+- **📅 Session Metadata**: Date, time, duration, focus area
+- **📊 Repository State**: Branch, commits, modified files
+- **🔍 Key Discoveries**: Important findings and insights
+- **📝 Progress Summary**: What was accomplished
+- **💭 AI Diary (MANDATORY)**: First-person narrative of session experience
+- **💭 Honest Feedback (MANDATORY)**: Frank assessment of what worked/didn't work
+- **📋 Lessons Learned**: Actionable insights for future sessions
+- **➡️ Next Steps**: Recommended actions
 
 ## Key Features
 
-✅ **Web search enabled** - Gets latest information
-✅ **Structured output** - Consistent report format
-✅ **Full URL references** - Complete, clickable links
-✅ **Process ID tracking** - Full traceability
-✅ **Medium reasoning** - Balanced depth and speed
+✅ **Complete session capture** - All relevant information documented
+✅ **Mandatory introspection** - AI Diary and Honest Feedback required
+✅ **Historical tracking** - Timestamped records for context
+✅ **Continuous improvement** - Lessons learned integration
+✅ **GitHub integration** - Links to relevant issues/PRs
 
-## Command executed
-```bash
-TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
-TASK_NAME="${user_input_sanitized}"
-OUTPUT_FILE=".catlab/research/${TIMESTAMP}_PLACEHOLDER_codex_${TASK_NAME}.md"
-
-codex exec -s danger-full-access \
-  -c 'tools.web_search=true' \
-  -c model_reasoning_effort="medium" \
-  "[Structured research prompt with mandatory URLs]"
-```
-
-Research results will include complete URLs for all sources referenced!
+This follows the established CLAUDE.md retrospective workflow pattern.
