@@ -36,14 +36,14 @@
 - All command files follow pattern: `.claude/commands/cc-*.md`
 
 ## Phase 3.1: Setup
-- [ ] T001 Create .claude/commands/ directory structure if not exists
-- [ ] T002 [P] Analyze existing .claude/commands/compare-analyse.md pattern for template reference
+- [x] T001 Create .claude/commands/ directory structure if not exists
+- [x] T002 [P] Analyze existing .claude/commands/compare-analyse.md pattern for template reference
 
 ## Phase 3.2: Manual Testing Preparation ⚠️ MUST COMPLETE BEFORE 3.3
 **CRITICAL: Test scenarios must be prepared before implementation**
-- [ ] T003 [P] Create manual test plan in specs/001-create-claude-code/test-plan.md
-- [ ] T004 [P] Document expected behavior for each command in test scenarios
-- [ ] T005 [P] Prepare git test repository state for workflow testing
+- [x] T003 [P] Create manual test plan in specs/001-create-claude-code/test-plan.md
+- [x] T004 [P] Document expected behavior for each command in test scenarios
+- [x] T005 [P] Prepare git test repository state for workflow testing
 
 ## Phase 3.3: Core Command Implementation (ONLY after test preparation)
 - [ ] T006 [P] Create cc-ccc.md command file in .claude/commands/cc-ccc.md
