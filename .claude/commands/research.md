@@ -37,7 +37,7 @@ The output will be saved to `.catlab/research/` with proper naming:
 ## Command executed
 ```bash
 # Simple usage with codex-research script
-./codex-research "your research topic"
+./codex-research.sh "your research topic"
 
 # Or manually with full command
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
@@ -50,14 +50,14 @@ codex exec -s danger-full-access \
   "[Structured research prompt with mandatory URLs]"
 ```
 
-## codex-research Script
-The `codex-research` script simplifies research execution:
+## codex-research.sh Script
+The `codex-research.sh` script simplifies research execution:
 
 ```bash
 # Usage examples
-./codex-research "Next.js 15 performance improvements"
-./codex-research "PostgreSQL vs MySQL for web applications"
-./codex-research "Docker container optimization best practices"
+./codex-research.sh "Next.js 15 performance improvements"
+./codex-research.sh "PostgreSQL vs MySQL for web applications"
+./codex-research.sh "Docker container optimization best practices"
 ```
 
 Features:
