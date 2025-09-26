@@ -1,158 +1,134 @@
-# Research Report: Migrate Short Codes to Slash Commands
+# Research Report: Simplified Markdown Command Migration
 
 **Feature**: 001-migrate-short-code
 **Date**: 2025-09-26
 **Status**: Complete
 
 ## Executive Summary
-This research documents the technical decisions for migrating existing short codes (`ccc`, `nnn`, `rrr`) to Claude Code slash commands while maintaining backward compatibility.
+This research documents the simplified approach for migrating existing short codes (`ccc`, `nnn`, `rrr`) to Claude Code slash commands using simple markdown files instead of complex TypeScript modules.
 
 ## Research Findings
 
 ### 1. Claude Code Command System
-**Decision**: Use markdown-based command definitions in `.claude/commands/`
+**Decision**: Use simple markdown files in `.claude/commands/`
 **Rationale**:
-- Claude Code already supports this directory structure
-- Markdown files allow rich documentation
-- Auto-discovery mechanism built-in
+- Claude Code supports markdown command definitions
+- No compilation or build process required
+- Easier to maintain and understand
+- Aligns with constitutional simplicity principle
 **Alternatives Considered**:
-- JSON configuration files (less readable)
-- TypeScript plugins (overcomplicated for this use case)
-- External configuration (breaks encapsulation)
+- TypeScript modules (rejected - too complex)
+- JSON configuration (rejected - less readable)
+- External scripts (rejected - breaks encapsulation)
 
-### 2. Short Code Implementation Analysis
-**Decision**: Extract workflow logic from existing CLAUDE.md patterns
+### 2. Markdown Command Format
+**Decision**: Standard markdown structure with metadata
 **Rationale**:
-- `ccc`: Creates GitHub context issues and compacts conversation
-- `nnn`: Analyzes issues and creates implementation plans
-- `rrr`: Generates session retrospectives
-- All follow similar GitHub CLI integration patterns
-**Alternatives Considered**:
-- Complete rewrite (loses proven patterns)
-- Direct code copy (misses improvement opportunities)
-
-### 3. Command Registration Mechanism
-**Decision**: Leverage Claude Code's SlashCommand API
-**Rationale**:
-- Native integration with auto-complete
-- Built-in command discovery via `/` prefix
-- Standard error handling pipeline
-**Alternatives Considered**:
-- Custom command parser (reinventing the wheel)
-- Keyboard shortcuts (less discoverable)
-- Context menu items (not text-based)
-
-### 4. Auto-complete Integration
-**Decision**: Provide command descriptions and argument hints
-**Rationale**:
-- Users can discover commands by typing `/`
-- Descriptions explain what each command does
-- Argument hints guide proper usage
-**Alternatives Considered**:
-- No descriptions (poor UX)
-- Separate help system (fragmented experience)
-- Dynamic suggestions (overcomplicated)
-
-### 5. Backward Compatibility Strategy
-**Decision**: Dual support - both short codes and slash commands work
-**Rationale**:
-- No breaking changes for existing users
-- Gradual migration path
-- Users can choose their preferred method
-**Alternatives Considered**:
-- Deprecation with warnings (disrupts workflows)
-- Complete removal (breaks existing documentation)
-- Versioned commands (complexity overhead)
-
-### 6. Flag Implementation
-**Decision**: Standard `--verbose` and `--dry-run` flags
-**Rationale**:
-- Industry-standard flag names
-- Clear, predictable behavior
-- Easy to implement and test
-**Alternatives Considered**:
-- Short flags only (`-v`, `-d`) - less clear
-- Custom flag names - breaks conventions
-- No flags - limits functionality
-
-### 7. Error Handling Architecture
-**Decision**: Structured errors with {code, message, remedy}
-**Rationale**:
-- Machine-readable for automation
-- Human-friendly messages
-- Actionable remedies guide resolution
-**Alternatives Considered**:
-- Simple string errors (not structured)
-- Error codes only (not user-friendly)
-- Verbose stack traces (too technical)
-
-## Technical Specifications
-
-### Command File Format
+- Follows existing Claude Code patterns
+- Easy to read and modify
+- Natural documentation format
+- No special tooling required
+**Format**:
 ```markdown
 # /command-name
 
 **Description**: Brief description for auto-complete
-**Arguments**: Optional arguments description
-**Flags**:
-  - `--verbose`: Detailed output
-  - `--dry-run`: Preview without execution
+**Arguments**: Optional arguments
+**Flags**: Supported flags
 
 ## Implementation
-[Command logic here]
+[Command logic or reference to existing short code]
 ```
 
-### Error Response Structure
-```typescript
-interface ErrorResponse {
-  code: string;        // e.g., "ERR_NO_GIT"
-  message: string;     // User-friendly description
-  remedy: string;      // How to fix the issue
-}
+### 3. Backward Compatibility Strategy
+**Decision**: Maintain both short codes and slash commands
+**Rationale**:
+- No breaking changes for existing users
+- User can choose preferred method
+- Gradual migration path available
+**Implementation**: Document both methods in CLAUDE.md
+
+### 4. Command Discovery
+**Decision**: Leverage Claude Code's built-in auto-complete
+**Rationale**:
+- No additional development needed
+- Standard user experience
+- Automatic discovery of new commands
+
+### 5. Error Handling
+**Decision**: Simple error messages in command descriptions
+**Rationale**:
+- Keep implementation minimal
+- Rely on existing Claude Code error handling
+- Focus on prevention through clear documentation
+
+## Implementation Approach
+
+### File Structure
+```
+.claude/
+├── commands/
+│   ├── context.md      # /context command
+│   ├── plan.md         # /plan command
+│   └── retrospective.md # /retrospective command
+└── tests/
+    └── manual-testing.md
 ```
 
-### Command Registry Interface
-```typescript
-interface SlashCommand {
-  name: string;
-  description: string;
-  handler: (args: string[], flags: Flags) => Promise<void>;
-}
-```
+### Command Template
+Each command markdown file will contain:
+1. Command name and description
+2. Usage examples
+3. Reference to existing short code implementation
+4. Supported flags documentation
 
-## Implementation Recommendations
+### Testing Strategy
+- Manual testing through Claude Code interface
+- Verify auto-complete functionality
+- Test backward compatibility
+- Document all test scenarios
 
-1. **Phase Implementation**:
-   - Start with core command structure
-   - Add basic functionality (no flags)
-   - Implement flags in second pass
-   - Add comprehensive error handling last
+## Benefits of Simplified Approach
 
-2. **Testing Strategy**:
-   - Unit tests for each command
-   - Integration tests for backward compatibility
-   - Manual testing in Claude Code environment
-   - Auto-complete verification
+1. **Constitutional Compliance**:
+   - Simplicity First: Minimal complexity
+   - Incremental Development: Easy to implement
+   - Explicit: Clear documentation
 
-3. **Documentation Updates**:
-   - Update CLAUDE.md with new commands
-   - Create command-specific help
-   - Add migration guide for users
+2. **Maintenance**:
+   - No build process
+   - Easy to modify
+   - Version control friendly
+
+3. **User Experience**:
+   - Familiar markdown format
+   - Self-documenting commands
+   - Standard Claude Code integration
+
+## Implementation Timeline
+
+- **Phase 1**: Create command directory structure (5 minutes)
+- **Phase 2**: Create 3 command markdown files (30 minutes)
+- **Phase 3**: Update CLAUDE.md documentation (15 minutes)
+- **Phase 4**: Manual testing (10 minutes)
+
+**Total Estimated Time**: ~1 hour (perfectly aligned with constitutional principle)
 
 ## Risks and Mitigations
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Command name conflicts | High | Check existing commands first |
-| Breaking changes | High | Maintain dual support |
-| Performance impact | Low | Lazy load command handlers |
-| Discovery issues | Medium | Clear descriptions in auto-complete |
+| Commands not discoverable | Medium | Test auto-complete thoroughly |
+| Backward compatibility broken | High | Maintain existing short codes |
+| Documentation outdated | Low | Update CLAUDE.md simultaneously |
 
-## Next Steps
-1. Create data model for command entities
-2. Define API contracts
-3. Generate test scenarios
-4. Create quickstart guide
+## Success Criteria
+
+1. ✅ Three slash commands appear in auto-complete
+2. ✅ Each command executes the same workflow as original short code
+3. ✅ Both old and new methods work
+4. ✅ Implementation takes <1 hour total
+5. ✅ No complex build or compilation steps
 
 ---
-**Research Complete**: All technical unknowns resolved, ready for Phase 1 design.
+**Research Complete**: Simplified approach validated and ready for implementation.

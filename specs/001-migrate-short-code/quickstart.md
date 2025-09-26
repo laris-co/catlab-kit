@@ -1,235 +1,269 @@
-# Quickstart: Migrated Slash Commands
+# Quickstart: Simple Markdown Slash Commands
 
-**Feature**: Slash Command Migration
-**Version**: 1.0.0
-**Prerequisites**: Claude Code environment with git repository
+**Feature**: Simplified Slash Command Migration
+**Version**: 2.0.0 (Simplified)
+**Prerequisites**: Claude Code environment
 
 ## Overview
-This guide demonstrates the migrated slash commands that replace the original short codes (`ccc`, `nnn`, `rrr`) while maintaining backward compatibility.
+This guide demonstrates the simplified approach to migrating short codes (`ccc`, `nnn`, `rrr`) to slash commands using simple markdown files.
 
-## Quick Test Scenarios
+## Quick Implementation Test
 
-### 1. Test Command Discovery
+### 1. Directory Setup
+```bash
+# Check if .claude directory exists
+ls -la .claude/
+
+# If not, create the structure:
+mkdir -p .claude/commands
+mkdir -p .claude/tests
+```
+
+### 2. Test Command Creation
+```bash
+# Create a simple test command
+cat > .claude/commands/test.md << 'EOF'
+# /test
+
+**Description**: Test command for validation
+**Arguments**: None
+**Flags**:
+  - `--verbose`: Show detailed output
+  - `--dry-run`: Preview without execution
+
+## Usage Examples
+```bash
+/test
+/test --verbose
+/test --dry-run
+```
+
+## Implementation
+This is a simple test command to verify the markdown approach works.
+
+## Backward Compatibility
+This is a new command for testing purposes.
+EOF
+```
+
+### 3. Verify Auto-Complete
 ```bash
 # In Claude Code, type:
-/
+/test
 
-# Expected: Auto-complete menu shows:
-# - /context - Create GitHub context issue and compact
-# - /plan - Analyze issue and create implementation plan
-# - /retrospective - Generate session retrospective
+# Expected: Command appears in auto-complete with description
+# "Test command for validation"
 ```
 
-### 2. Test Context Command (`/context` replaces `ccc`)
+## Manual Testing Procedures
+
+### Test 1: Command Discovery
+**Objective**: Verify commands appear in auto-complete
+
+**Steps**:
+1. Open Claude Code
+2. Type `/`
+3. Look for migrated commands in suggestion list
+
+**Expected Results**:
+- `/context` appears with description
+- `/plan` appears with description
+- `/retrospective` appears with description
+
+### Test 2: Context Command
+**Objective**: Test `/context` replaces `ccc`
+
+**Steps**:
+1. Run traditional command: `ccc`
+2. Note the behavior and output
+3. Run new command: `/context`
+4. Compare results
+
+**Expected Results**:
+- Both commands produce identical GitHub issues
+- Both trigger conversation compacting
+- No differences in functionality
+
+### Test 3: Plan Command
+**Objective**: Test `/plan` replaces `nnn`
+
+**Steps**:
+1. Choose a test issue number (e.g., #123)
+2. Run traditional command: `nnn #123`
+3. Note the behavior and output
+4. Run new command: `/plan 123`
+5. Compare results
+
+**Expected Results**:
+- Both commands analyze the same issue
+- Both create implementation plan issues
+- Argument parsing works correctly
+
+### Test 4: Retrospective Command
+**Objective**: Test `/retrospective` replaces `rrr`
+
+**Steps**:
+1. Run traditional command: `rrr`
+2. Note the behavior and output
+3. Run new command: `/retrospective`
+4. Compare results
+
+**Expected Results**:
+- Both commands generate session retrospectives
+- Both save to retrospectives/ directory
+- File formats are identical
+
+### Test 5: Flag Functionality
+**Objective**: Test `--verbose` and `--dry-run` flags
+
+**Steps**:
+1. Test verbose: `/context --verbose`
+2. Test dry-run: `/context --dry-run`
+3. Test combined: `/context --verbose --dry-run`
+
+**Expected Results**:
+- Verbose shows additional output
+- Dry-run previews without execution
+- Combined flags work together
+
+## Implementation Validation
+
+### File Structure Check
 ```bash
-# Traditional way (still works):
-ccc
-
-# New slash command way:
-/context
-
-# With verbose flag:
-/context --verbose
-
-# Dry run (preview mode):
-/context --dry-run
-
-# Expected outcomes:
-# - GitHub issue created with session context
-# - Conversation compacted
-# - Both methods produce identical results
+# Verify correct file structure
+tree .claude/
+# Expected:
+# .claude/
+# ├── commands/
+# │   ├── context.md
+# │   ├── plan.md
+# │   └── retrospective.md
+# └── tests/
+#     └── manual-testing.md
 ```
 
-### 3. Test Plan Command (`/plan` replaces `nnn`)
+### File Content Validation
 ```bash
-# Traditional way with issue number:
-nnn #123
-
-# New slash command way:
-/plan 123
-
-# With verbose output:
-/plan 123 --verbose
-
-# Preview without creating issue:
-/plan 123 --dry-run
-
-# Expected outcomes:
-# - Issue #123 analyzed
-# - Implementation plan created
-# - Plan issue created in GitHub
-```
-
-### 4. Test Retrospective Command (`/retrospective` replaces `rrr`)
-```bash
-# Traditional way:
-rrr
-
-# New slash command way:
-/retrospective
-
-# With detailed output:
-/retrospective --verbose
-
-# Preview retrospective:
-/retrospective --dry-run
-
-# Expected outcomes:
-# - Session retrospective generated
-# - File created in retrospectives/
-# - GitHub issue/PR updated with reference
-```
-
-## Error Handling Verification
-
-### Test Missing Git Repository
-```bash
-# Navigate to non-git directory
-cd /tmp
-/context
-
-# Expected error:
-{
-  "code": "ERR_NO_GIT",
-  "message": "Not in a git repository",
-  "remedy": "Run 'git init' or navigate to a git repository"
-}
-```
-
-### Test Invalid Arguments
-```bash
-/plan abc
-
-# Expected error:
-{
-  "code": "ERR_INVALID_ARGS",
-  "message": "Invalid issue number: abc",
-  "remedy": "Provide a valid issue number (e.g., /plan 123)"
-}
-```
-
-### Test Missing GitHub CLI
-```bash
-# If gh CLI not installed:
-/context
-
-# Expected error:
-{
-  "code": "ERR_NO_GH_CLI",
-  "message": "GitHub CLI not found",
-  "remedy": "Install GitHub CLI: https://cli.github.com"
-}
+# Check each command file has required sections
+grep -n "**Description**" .claude/commands/*.md
+grep -n "## Usage Examples" .claude/commands/*.md
+grep -n "## Implementation" .claude/commands/*.md
+grep -n "## Backward Compatibility" .claude/commands/*.md
 ```
 
 ## Backward Compatibility Tests
 
-### Verify Both Methods Work
+### Test 1: Short Codes Still Work
 ```bash
-# Test 1: Context creation
+# Verify original short codes function
+ccc     # Should create context issue
+nnn #456 # Should analyze issue 456
+rrr     # Should generate retrospective
+```
+
+### Test 2: Mixed Usage
+```bash
+# Test using both methods in same session
 ccc                    # Old way
-/context               # New way
-# Both should create identical context issues
-
-# Test 2: Planning with arguments
-nnn #456               # Old way
-/plan 456              # New way
-# Both should analyze same issue and create plan
-
-# Test 3: Retrospective generation
-rrr                    # Old way
-/retrospective         # New way
-# Both should generate identical retrospectives
+/plan 789             # New way
+/retrospective        # New way
 ```
 
-## Flag Functionality Tests
-
-### Verbose Flag Test
+### Test 3: Documentation Update
 ```bash
-# Run with verbose flag
-/context --verbose
-
-# Expected additional output:
-# - Detailed git status
-# - Full file listings
-# - Complete command execution logs
-# - Timing information
+# Verify CLAUDE.md documents both methods
+grep -A 5 -B 5 "ccc\|/context" CLAUDE.md
+grep -A 5 -B 5 "nnn\|/plan" CLAUDE.md
+grep -A 5 -B 5 "rrr\|/retrospective" CLAUDE.md
 ```
-
-### Dry Run Flag Test
-```bash
-# Preview without execution
-/plan 789 --dry-run
-
-# Expected behavior:
-# - Shows what would be done
-# - No GitHub issues created
-# - No files modified
-# - Preview of issue content displayed
-```
-
-## Integration Test Checklist
-
-- [ ] All three slash commands appear in auto-complete
-- [ ] `/context` creates GitHub issue successfully
-- [ ] `/plan` analyzes issues and creates plans
-- [ ] `/retrospective` generates session summary
-- [ ] Old short codes (`ccc`, `nnn`, `rrr`) still work
-- [ ] `--verbose` flag provides detailed output
-- [ ] `--dry-run` flag previews without execution
-- [ ] Error messages include code, message, and remedy
-- [ ] Commands work in git repository context
-- [ ] Commands fail gracefully outside git repository
 
 ## Performance Validation
 
-### Command Discovery Speed
+### Speed Test
 ```bash
+# Time command discovery
 # Type "/" and measure auto-complete response
-# Expected: <100ms for suggestion list
+# Expected: <100ms for suggestion list to appear
 ```
 
-### Command Execution Time
+### Resource Usage
 ```bash
-# Measure basic command execution
-time /context --dry-run
-
-# Expected times:
-# - Parsing: <10ms
-# - Validation: <20ms
-# - Dry run execution: <100ms
-# - Full execution: <2s (including GitHub API calls)
+# Monitor resource usage during command execution
+# No significant CPU or memory increase expected
 ```
+
+## Error Handling Tests
+
+### Test 1: Invalid Arguments
+```bash
+/plan abc     # Should show helpful error
+/plan         # Should work without arguments
+```
+
+### Test 2: Missing Prerequisites
+```bash
+# Test outside git repository
+cd /tmp
+/context      # Should show appropriate error message
+```
+
+### Test 3: Network Issues
+```bash
+# Test when GitHub CLI unavailable
+# Should show clear error with remedy
+```
+
+## Success Criteria Checklist
+
+- [ ] All three slash commands appear in auto-complete
+- [ ] Each slash command produces identical output to short code
+- [ ] Both old and new methods work simultaneously
+- [ ] `--verbose` flag increases output detail
+- [ ] `--dry-run` flag previews without execution
+- [ ] Commands work in git repository context
+- [ ] Commands fail gracefully outside git repository
+- [ ] Implementation takes <1 hour total
+- [ ] No build or compilation steps required
+- [ ] Documentation updated in CLAUDE.md
 
 ## Troubleshooting
 
-### Command Not Found
-If slash commands don't appear:
-1. Verify Claude Code is updated
-2. Check `.claude/commands/` directory exists
+### Commands Not Appearing
+**Issue**: Slash commands don't show in auto-complete
+**Solution**:
+1. Verify `.claude/commands/` directory exists
+2. Check file names match command names
 3. Restart Claude Code if needed
 
-### Short Codes Not Working
-If backward compatibility broken:
-1. Check alias mappings in registry
-2. Verify both code paths maintained
-3. Check for regression in recent changes
+### Backward Compatibility Broken
+**Issue**: Original short codes stop working
+**Solution**:
+1. Verify CLAUDE.md maintains both methods
+2. Check for conflicts in command names
+3. Test in clean environment
 
-### Auto-complete Issues
-If suggestions don't appear:
-1. Type `/` and wait briefly
-2. Check command descriptions are set
-3. Verify command registration succeeded
+### Performance Issues
+**Issue**: Slow auto-complete or command execution
+**Solution**:
+1. Check file sizes (should be small)
+2. Verify no complex processing in markdown
+3. Monitor system resources
 
-## Success Criteria
+## Implementation Time Tracking
 
-✅ **Migration Complete When**:
-1. All slash commands discoverable via auto-complete
-2. Each command executes its original workflow
-3. Both old and new methods work identically
-4. Flags enhance functionality without breaking defaults
-5. Errors provide clear guidance for resolution
-6. Performance meets or exceeds original implementation
+**Target**: Complete in under 1 hour
+
+**Breakdown**:
+- [ ] Directory setup: 5 minutes
+- [ ] Create context.md: 10 minutes
+- [ ] Create plan.md: 10 minutes
+- [ ] Create retrospective.md: 10 minutes
+- [ ] Update CLAUDE.md: 15 minutes
+- [ ] Manual testing: 10 minutes
+
+**Total**: ~60 minutes (constitutional compliance ✅)
 
 ---
-**Quick Test Duration**: ~10 minutes
-**Full Validation Duration**: ~30 minutes
+**Quick Test Duration**: ~15 minutes
+**Full Validation Duration**: ~45 minutes
+**Total Implementation**: ~60 minutes
