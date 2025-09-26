@@ -1,258 +1,255 @@
-## Revolutionary Approach: Direct Process Execution
-### Overview
-Instead of using tmux send-keys to interact with Codex CLI, use direct process execution with `codex exec` for cleaner, faster, and more reliable automation.
-### Basic Usage
-```bash
-# Direct execution with custom settings
-codex exec -s danger-full-access -c model_reasoning_effort="low" "Your task here"
-# Examples
-codex exec -s danger-full-access -c model_reasoning_effort="high" "Refactor the API to use TypeScript interfaces"
-codex exec -s danger-full-access -c model_reasoning_effort="low" "List all files in src/"
-```
-### Helper Script Usage
-A helper script `codex-exec.sh` simplifies common operations:
-```bash
-# Usage: ./codex-exec.sh [reasoning_level] "task"
-./codex-exec.sh low "Quick file listing"
-./codex-exec.sh high "Complex refactoring task"
-./codex-exec.sh "Default task" # defaults to low reasoning
-```
-### Background Execution with Monitoring
-For long-running tasks, use background execution:
-```bash
-# In Claude, use run_in_background parameter:
-# Bash tool with run_in_background: true
-# Then monitor with BashOutput tool using the returned bash_id
-```
-### Parallel Execution
-Multiple Codex instances can run simultaneously:
-```bash
-# Start multiple background tasks
-codex exec -s danger-full-access "Task 1" &
-codex exec -s danger-full-access "Task 2" &
-wait # Wait for all to complete
-```
-### Key Advantages Over TMux Approach
-1. **No timing issues** - No sleep/wait commands needed
-2. **Clean output** - Direct JSON/text without UI elements  
-3. **Exit codes** - Proper error handling with return codes
-4. **Parallel execution** - Run multiple instances simultaneously
-5. **Scriptable** - Easy integration with CI/CD pipelines
-### Reasoning Levels
-- `minimal` - Fastest, limited reasoning (~5-10s for simple tasks)
-- `low` - Balanced speed with some reasoning (~10-15s)
-- `medium` - Default, solid reasoning (~15-25s)
-- `high` - Maximum reasoning depth (~30-60s+)
-### Safety Considerations
-- Using `danger-full-access` grants full system access
-- Auto-approval with `--ask-for-approval never` bypasses confirmations
-- Consider permission models for production use
-### Common Patterns
-```bash
-# Add new API endpoint
-codex exec -s danger-full-access -c model_reasoning_effort="high" \
-  "Add a new REST endpoint /api/users that returns user data"
-# Refactor code
-codex exec -s danger-full-access -c model_reasoning_effort="high" \
-  "Refactor the authentication module to use JWT tokens"
-# Generate tests
-codex exec -s danger-full-access -c model_reasoning_effort="medium" \
-  "Write unit tests for the user service module"
-# Quick fixes
-codex exec -s danger-full-access -c model_reasoning_effort="low" \
-  "Fix the typo in README.md"
-```
-### Integration with Claude
-When Claude needs to use Codex:
-1. Use direct `codex exec` commands instead of tmux
-2. For long tasks, use `run_in_background: true`
-3. Monitor progress with `BashOutput` tool
-4. Check exit codes for success/failure
-5. Parse clean output without UI filtering
-### Discovered Capabilities
-- ✅ Non-interactive execution with `codex exec`
-- ✅ Parallel task execution
-- ✅ Background monitoring
-- ✅ Custom reasoning levels
-- ✅ Direct file modifications
-- ✅ Automatic git patches
-- ✅ TypeScript/JavaScript understanding
-- ✅ API endpoint creation
-- ✅ Code refactoring
+# Claude-Codex Orchestrator/Worker Architecture
 
-### Helper Script
-The `codex-exec.sh` helper script is available in the repository root for simplified execution. 
-# Claude-Codex Orchestrator/Worker Architecture (2025-09-01)
-## Paradigm: Claude as Orchestrator, Codex as Workers
-### Division of Responsibilities
-#### Claude (Orchestrator - Opus/Sonnet)
-**Primary Role**: High-level thinking, planning, and GitHub operations
-- 🧠 **Thinking & Analysis**: Strategic planning, decision making, result interpretation
-- 📋 **GitHub Operations**: All `gh` CLI operations (issues, PRs, comments, merges)
-- 🎛️ **Worker Management**: Spawn, monitor, and coordinate multiple Codex instances
-- 📊 **Progress Monitoring**: Track worker status using `BashOutput`
-- 🔄 **Result Aggregation**: Combine outputs from multiple workers
-- 📝 **Documentation**: Write retrospectives, update AGENTS.md
-- 🔍 **Quality Control**: Review worker outputs before GitHub operations
+## 🔴 CRITICAL SAFETY NOTICE
+**This architecture uses `danger-full-access` which grants UNRESTRICTED system access.**
+- Only use in isolated development environments
+- Never use in production without proper security measures
+- Consider implementing file path whitelisting and permission models
+- All examples shown are for development/testing only
+
+## Quick Start
+
+### Safe Execution Pattern (Tested & Verified)
+```bash
+# 1. Generate timestamp for traceability
+TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+TASK_NAME="your_task_description"
+
+# 2. Define output file with bash ID placeholder
+OUTPUT_FILE="codex-outputs/${TIMESTAMP}_BASHID_${TASK_NAME}.md"
+
+# 3. Execute in background (returns bash_id for tracking)
+codex exec -s danger-full-access \
+  -c model_reasoning_effort="low" \
+  "Your task here. Save output to: ${OUTPUT_FILE}"
+
+# Background execution in Claude Code:
+# run_in_background: true → Returns bash_id
+# Track with BashOutput tool using bash_id
+```
+
+## Architecture Overview
+
+### Paradigm: Claude as Orchestrator, Codex as Workers
+
+#### Claude (Orchestrator)
+**Primary Role**: High-level planning and coordination
+- 🧠 Strategic planning and decision making
+- 📋 All GitHub operations (`gh` CLI)
+- 🎛️ Spawning and monitoring Codex workers
+- 📊 Progress tracking via `BashOutput`
+- 🔄 Aggregating results from multiple workers
+- 🔍 Quality control and review
+
 #### Codex (Workers)
-**Primary Role**: Execution, implementation, and file operations
-- ⚙️ **Code Execution**: Run commands, analyze code, implement features
-- 📁 **File Operations**: Read, write, edit, search through codebases
-- 🔧 **Implementation**: Make code changes, refactor, fix bugs
-- 🚀 **Parallel Processing**: Multiple instances for concurrent tasks
-- 📈 **Analysis Tasks**: Deep code analysis, pattern detection
-- 🧪 **Testing**: Run tests, validate changes
-### Implementation Patterns
-#### Single Worker Pattern
-```bash
-# Claude delegates a single task to Codex
-codex exec -s danger-full-access -c model_reasoning_effort="low" "Task description"
+**Primary Role**: Execution and implementation
+- ⚙️ Code execution and analysis
+- 📁 File operations (read, write, edit)
+- 🔧 Implementation of features and fixes
+- 🚀 Parallel processing capability
+- 📈 Deep code analysis tasks
+- 🧪 Testing and validation
+
+## File Organization & Naming Convention
+
+### Directory Structure
 ```
-#### Multiple Worker Pattern
+codex-outputs/                       # Flat structure (no nesting)
+├── NAMING_CONVENTION.md             # Naming guide
+├── WORKFLOW_SUMMARY.md              # Workflow documentation
+├── worker_registry.json             # Bash ID → output mapping
+└── {timestamp}_{bash_id}_{task}.ext # Output files
+```
+
+### Naming Pattern
+```
+{YYYYMMDD}_{HHMMSS}_{bash_id}_{task_name}.{ext}
+```
+Example: `20250926_153721_c1282f_readme_analysis.md`
+
+### Worker Registry Format
+```json
+{
+  "active_workers": [{
+    "bash_id": "c1282f",
+    "timestamp": "20250926_153738",
+    "task": "readme_analysis",
+    "output_file": "codex-outputs/20250926_153738_c1282f_readme_analysis.md",
+    "status": "running"
+  }]
+}
+```
+
+## Implementation Patterns
+
+### Single Worker Pattern
 ```bash
-# Claude spawns multiple Codex workers for parallel execution
+# Simple task delegation
+codex exec -s danger-full-access \
+  -c model_reasoning_effort="low" \
+  "Analyze codebase and save findings to ${OUTPUT_FILE}"
+```
+
+### Parallel Workers Pattern
+```bash
+# Launch multiple workers simultaneously
 # Worker 1: Frontend analysis
-codex exec -s danger-full-access "Analyze all React components" &  # Returns bash_1
-# Worker 2: Backend analysis  
-codex exec -s danger-full-access "Review API endpoints" &  # Returns bash_2
+TIMESTAMP1=$(date +"%Y%m%d_%H%M%S")
+codex exec -s danger-full-access "Analyze frontend" &  # → bash_id_1
+
+# Worker 2: Backend analysis
+TIMESTAMP2=$(date +"%Y%m%d_%H%M%S")
+codex exec -s danger-full-access "Analyze backend" &   # → bash_id_2
+
 # Worker 3: Test coverage
-codex exec -s danger-full-access "Check test coverage" &  # Returns bash_3
-# Claude monitors all workers
-BashOutput bash_1  # Monitor frontend analysis
-BashOutput bash_2  # Monitor backend analysis
-BashOutput bash_3  # Monitor test coverage
-# Claude aggregates results and creates GitHub issue/PR
+TIMESTAMP3=$(date +"%Y%m%d_%H%M%S")
+codex exec -s danger-full-access "Check tests" &       # → bash_id_3
+
+# Monitor with BashOutput tool using bash IDs
 ```
-#### Background Worker Pattern
+
+## Reasoning Levels & Performance
+
+| Level | Use Case | Execution Time | When to Use |
+|-------|----------|----------------|-------------|
+| `minimal` | File listing, simple searches | ~5-10s | Basic file operations |
+| `low` | Code formatting, simple refactoring | ~10-15s | Straightforward changes |
+| `medium` | Feature implementation, bug fixes | ~15-25s | Standard development |
+| `high` | Complex analysis, architecture | ~30-60s+ | Deep reasoning needed |
+
+## Best Practices
+
+### Safety First
+1. **Never use `-f` or `--force` flags**
+2. Use `rm -i` instead of `rm -f`
+3. Implement proper error handling
+4. Validate operations before execution
+5. Keep audit logs of all operations
+
+### For Claude (Orchestrator)
+1. **Plan before delegating** - Think through the task breakdown
+2. **Use TodoWrite** - Track all worker tasks
+3. **Batch operations** - Launch parallel workers when possible
+4. **Handle all GitHub operations** - Only Claude uses `gh` CLI
+5. **Monitor actively** - Use `BashOutput` to track progress
+6. **Clean up stuck workers** - Use `KillShell` if needed
+
+### For Codex (Workers)
+1. **Focused tasks** - Give specific, well-defined objectives
+2. **Appropriate reasoning** - Match level to task complexity
+3. **Clear output instructions** - Always specify output location
+4. **Structured output** - Use JSON/Markdown for easy parsing
+5. **File-based communication** - Save outputs, don't rely on stdout
+
+### Critical Distinction
+- **Planning tasks (`nnn`)**: Include "DO NOT modify/implement/write files"
+- **Implementation tasks (`gogogo`)**: Allow file modifications
+- **Be explicit**: "Analyze and DESIGN ONLY" vs "Implement the following"
+
+## Workflow Examples
+
+### Example 1: Multi-Component Refactoring
 ```bash
-# For long-running tasks, use background execution
-codex exec -s danger-full-access -c model_reasoning_effort="high" \
-  "Complex refactoring task" \
-  run_in_background: true  # Returns bash_id
-# Claude continues other work while monitoring
-BashOutput bash_id  # Check progress periodically
+# 1. Claude analyzes requirements
+# 2. Claude spawns workers:
+codex exec "Refactor components to ${OUTPUT1}" &
+codex exec "Update tests to ${OUTPUT2}" &
+codex exec "Update docs to ${OUTPUT3}" &
+# 3. Monitor all workers via BashOutput
+# 4. Aggregate results
+# 5. Create PR with gh CLI
 ```
-### Workflow Examples
-#### Example 1: Multi-File Refactoring
-```
-1. Claude analyzes requirements
-2. Claude spawns 3 Codex workers:
-   - Worker A: Refactor components
-   - Worker B: Update tests
-   - Worker C: Update documentation
-3. Claude monitors all three in parallel
-4. Claude aggregates changes
-5. Claude creates PR with gh CLI
-```
-#### Example 2: Codebase Analysis
-```
-1. Claude plans analysis strategy
-2. Claude delegates to Codex:
-   - "Analyze security vulnerabilities"
-   - "Check code quality metrics"
-   - "Review dependency updates"
-3. Codex executes and returns findings
-4. Claude creates comprehensive GitHub issue
-```
-#### Example 3: Bug Fix Workflow
-```
-1. Claude reads GitHub issue
-2. Claude delegates investigation to Codex
-3. Codex finds root cause and implements fix
-4. Claude reviews the fix
-5. Claude creates PR and updates issue
-```
-### Best Practices
-#### For Claude (Orchestrator)
-1. **Always think first**: Plan before delegating to workers
-2. **Use TodoWrite**: Track worker tasks and progress
-3. **Batch operations**: Spawn multiple workers when tasks are independent
-4. **Handle GitHub**: All `gh` operations should be done by Claude
-5. **Aggregate intelligently**: Combine worker outputs meaningfully
-6. **Monitor actively**: Use `BashOutput` to track worker progress
-7. **Kill stuck workers**: Use `KillBash` if workers hang
-#### For Codex (Workers)
-1. **Focused tasks**: Give Codex specific, well-defined tasks
-2. **Appropriate reasoning**: Use `low` for simple, `high` for complex
-3. **Parallel when possible**: Independent tasks should run concurrently
-4. **Clear output**: Request structured output for easy aggregation
-5. **Error handling**: Expect and handle worker failures gracefully
-6. **CRITICAL - Planning vs Implementation**:
-   - For `nnn` (planning): ALWAYS include "DO NOT modify/implement/write files"
-   - For `gogogo` (implementation): Allow file modifications
-   - Use explicit instructions: "Analyze and DESIGN ONLY" vs "Implement the following"
-### Communication Patterns
-#### Claude → Codex
+
+### Example 2: Bug Fix Workflow
 ```bash
-# Direct execution with results
-result=$(codex exec -s danger-full-access "task")
-# Background with monitoring
-codex exec -s danger-full-access "task" & # run_in_background: true
-BashOutput bash_id
+# 1. Claude reads GitHub issue
+# 2. Delegate investigation to Codex
+codex exec "Find root cause and save to ${OUTPUT}"
+# 3. Review findings
+# 4. Delegate fix implementation
+codex exec "Implement fix based on analysis"
+# 5. Create PR and update issue
 ```
-#### Codex → Claude
-- Returns via stdout/stderr
-- Exit codes indicate success/failure
-- Structured output (JSON, markdown) for easy parsing
-#### Claude → GitHub
+
+## Helper Scripts
+
+### codex-exec.sh
+Basic execution helper for quick tasks:
 ```bash
-# All GitHub operations handled by Claude
-gh issue create --title "Title" --body "Body"
-gh pr create --title "Title" --body "Body"
-gh issue comment 123 --body "Comment"
+./codex-exec.sh low "Quick file listing"
+./codex-exec.sh high "Complex refactoring"
 ```
-### Anti-Patterns to Avoid
-1. ❌ **Codex doing GitHub operations** - Only Claude should interact with GitHub
-2. ❌ **Claude doing file operations** - Delegate file work to Codex
-3. ❌ **Serial execution of independent tasks** - Use parallel workers
-4. ❌ **Not monitoring workers** - Always track progress with BashOutput
-5. ❌ **Over-reasoning for simple tasks** - Use appropriate reasoning levels
-6. ❌ **Under-utilizing parallelism** - Spawn multiple workers when possible
-### Performance Guidelines
-#### Reasoning Levels by Task Type
-- **minimal**: File listing, simple searches (~5-10s)
-- **low**: Code formatting, simple refactoring (~10-15s)
-- **medium**: Feature implementation, bug fixes (~15-25s)
-- **high**: Complex analysis, architecture changes (~30-60s+)
-#### Parallel Execution Limits
-- Maximum recommended concurrent workers: 5-10
-- Monitor system resources when spawning many workers
-- Use `ps aux | grep codex` to check running instances
-### Example: Complete Feature Implementation
+
+### codex-worker-launcher.sh
+Advanced launcher with timestamp and tracking support.
+
+## Anti-Patterns to Avoid
+
+1. ❌ **Codex doing GitHub operations** - Only Claude should use `gh`
+2. ❌ **Claude doing file operations** - Delegate to Codex
+3. ❌ **Serial execution when parallel possible** - Use workers
+4. ❌ **Not monitoring workers** - Always track with BashOutput
+5. ❌ **Reading shell output directly** - Wait for output files
+6. ❌ **Using force flags** - Always use safe operations
+7. ❌ **Nested directory structures** - Keep outputs flat
+
+## Monitoring & Debugging
+
+### Check Running Workers
 ```bash
-# Claude's workflow for implementing a new feature
-# 1. Claude analyzes requirements and creates plan
-TodoWrite "Plan feature implementation"
-# 2. Claude spawns multiple Codex workers
-worker1=$(codex exec -s danger-full-access "Implement backend API endpoint" &)
-worker2=$(codex exec -s danger-full-access "Create frontend components" &)
-worker3=$(codex exec -s danger-full-access "Write unit tests" &)
-worker4=$(codex exec -s danger-full-access "Update documentation" &)
-# 3. Claude monitors all workers
-BashOutput $worker1
-BashOutput $worker2
-BashOutput $worker3
-BashOutput $worker4
-# 4. Claude aggregates results
-# (Combine outputs, resolve conflicts, ensure consistency)
-# 5. Claude handles GitHub
-gh issue comment $issue_number --body "Feature implemented"
-gh pr create --title "feat: New feature" --body "Details..."
+ps aux | grep codex
 ```
-### Metrics & Monitoring
-Track these metrics for optimization:
-- Worker completion times by reasoning level
-- Parallel vs serial execution time savings
-- Worker failure rates by task type
-- GitHub operation success rates
-- Overall workflow completion times
-### Migration Path
-For existing workflows:
-1. Identify file-heavy operations → Delegate to Codex
-2. Identify GitHub operations → Keep with Claude
-3. Identify independent tasks → Parallelize with multiple workers
-4. Identify complex analysis → Use high-reasoning Codex
-5. Test and optimize reasoning levels
-**Last Updated**: 2025-09-02
-**Architecture Version**: 2.0
-**Key Innovation**: Orchestrator/Worker pattern with Claude/Codex
+
+### Monitor Worker Output
+Use `BashOutput` tool with bash_id to check progress without reading stdout.
+
+### Worker Registry
+Check `codex-outputs/worker_registry.json` for active workers and their outputs.
+
+## Security Considerations
+
+### Development Environment
+- Current examples use `danger-full-access` for testing
+- Suitable only for isolated development environments
+- Full system access - handle with care
+
+### Production Recommendations
+1. Implement proper authentication and authorization
+2. Use containerization for isolation
+3. Create file path whitelists
+4. Add confirmation prompts for destructive operations
+5. Maintain audit logs
+6. Regular security reviews
+7. Never use `--ask-for-approval never` in production
+
+## Performance Optimization
+
+- **Parallel execution limit**: 5-10 concurrent workers
+- **Monitor system resources**: Check CPU/memory usage
+- **Use appropriate reasoning levels**: Don't over-reason simple tasks
+- **Batch related operations**: Group similar tasks
+
+## Migration from TMux Approach
+
+### Key Advantages
+1. **No timing issues** - No sleep/wait commands needed
+2. **Clean output** - Direct file output without UI parsing
+3. **Proper exit codes** - Better error handling
+4. **Parallel execution** - True concurrent processing
+5. **Scriptable** - Easy CI/CD integration
+
+## Summary
+
+The Claude-Codex orchestrator/worker pattern provides:
+- Clear separation of responsibilities
+- Parallel execution capabilities
+- File-based communication with traceability
+- Safety-first approach to operations
+- Scalable architecture for complex tasks
+
+**Remember**: Safety over speed. Always validate operations before execution.
+
+---
+**Last Updated**: 2025-09-26
+**Version**: 3.0 (Production-Ready)
+**Status**: Tested and Verified
